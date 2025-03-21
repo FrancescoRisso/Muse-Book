@@ -1,0 +1,23 @@
+Sub export_all()
+
+    Dim ExportGroup As Shape
+    Debug.Print ActivePresentation.Path
+
+    For Each Slide In ActivePresentation.Slides
+    
+        ActiveWindow.View.GotoSlide Slide.SlideIndex
+
+        For Each Obj In Slide.Shapes
+            If Obj.Id <> Slide.Shapes.Title.Id Then
+                Obj.Select msoFalse
+            End If
+        Next
+        
+        Set ExportGroup = ActiveWindow.Selection.ShapeRange.Group
+        ExportGroup.Export ActivePresentation.Path & ".\" & Slide.Shapes.Title.TextFrame.TextRange.Text & ".png", ppShapeFormatPNG
+        Debug.Print ActivePresentation.Path & "\" & Slide.Shapes.Title.TextFrame.TextRange.Text & ".png"
+        ExportGroup.Ungroup
+
+    Next
+
+End Sub
