@@ -1,0 +1,29 @@
+:host {
+	width: 100%;
+	height: 100%;
+
+	display: flex;
+	flex-direction: row;
+
+	background-color: var(--color-bg);
+
+	&.mobile {
+		height: var(--navbar-height-mobile);
+		justify-content: space-evenly;
+	}
+	&.tablet {
+		height: var(--navbar-height-tablet);
+		justify-content: space-evenly;
+	}
+	&.pc {
+		width: var(--navbar-width-pc);
+		float: left;
+
+		flex-direction: column;
+		justify-content: space-between;
+	}
+
+	.placeholder {
+		width: 20%;
+	}
+}

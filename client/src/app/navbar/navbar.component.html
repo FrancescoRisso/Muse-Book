@@ -1,0 +1,22 @@
+@if (device() === "pc") {
+
+<div>
+	<app-navbar-icon iconName="search" i18n-dispName dispName="Cerca" />
+	<app-navbar-icon iconName="books" i18n-dispName dispName="Libri" />
+	<app-navbar-icon iconName="playlist" i18n-dispName dispName="Scalette" />
+</div>
+<div>
+	<app-navbar-icon iconName="account" i18n-dispName dispName="Account" />
+	<app-navbar-icon iconName="settings" i18n-dispName dispName="Impost." />
+</div>
+} @else { @if (device() === "tablet") {
+<div class="placeholder"></div>
+}
+<app-navbar-icon iconName="search" i18n-dispName dispName="Cerca" />
+<app-navbar-icon iconName="books" i18n-dispName dispName="Libri" />
+<app-navbar-icon iconName="playlist" i18n-dispName dispName="Scalette" />
+<app-navbar-icon iconName="account" i18n-dispName dispName="Account" />
+<app-navbar-icon iconName="settings" i18n-dispName dispName="Impost." />
+@if (device() === "tablet") {
+<div class="placeholder"></div>
+} }

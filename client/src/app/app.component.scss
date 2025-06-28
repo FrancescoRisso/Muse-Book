@@ -1,0 +1,24 @@
+.main-container {
+	width: 100vw;
+	height: 100vh;
+
+	--navbar-height-mobile: 80px;
+	--navbar-height-tablet: 80px;
+	--navbar-width-pc: 100px;
+}
+
+.content {
+	width: 100%;
+	height: 100%;
+
+	&.mobile {
+		height: calc(100% - var(--navbar-height-mobile));
+	}
+	&.tablet {
+		height: calc(100% - var(--navbar-height-tablet));
+	}
+	&.pc {
+		width: calc(100% - var(--navbar-width-pc));
+		float: right;
+	}
+}

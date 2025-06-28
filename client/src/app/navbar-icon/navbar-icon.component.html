@@ -1,0 +1,8 @@
+<div [ngClass]="['icon-label-position', device()]">
+	<div [ngClass]="['icon-label-container', device()]">
+		<svg preserveAspectRatio="xMidYMid meet" viewBox="0 0 120 120" [ngClass]="[device()]">
+			<use [attr.xlink:href]="'assets/icons/sidebar/' + iconName() + '.svg'"></use>
+		</svg>
+		<p [ngClass]="[device()]">{{ dispName() }}</p>
+	</div>
+</div>
