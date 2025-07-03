@@ -1,7 +1,7 @@
 import re
 
 if __name__ =="__main__":
-	FILE = "./test"
+	FILE = "./db-creation-script.sqlite3"
 
 	table_name_def_matcher = re.compile(r"CREATE TABLE `([^`]*)`([^;]*);", re.MULTILINE)
 	foreign_keys_matcher = re.compile(r"ALTER TABLE `([^`]*)` ADD FOREIGN KEY \(`([^`]*)`\) REFERENCES `([^`]*)`\(`([^`]*)`\)")
