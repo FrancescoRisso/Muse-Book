@@ -24,10 +24,6 @@ ON_DELETE: dict[str, list[tuple[str, str, str, str]]] = {
         ("SongId", "SONG", "Id", "SET NULL"),
         ("UserId", "USER", "Id", "CASCADE"),
     ],
-    "USER_FAVORITE_BOOKS": [
-        ("BookId", "BOOK", "Id", "CASCADE"),
-        ("UserId", "USER", "Id", "CASCADE"),
-    ],
     "PLAYLIST_TEMPLATE": [("Owner", "USER", "Id", "CASCADE")],
     "PLAYLIST_TEMPLATE_ITEM": [("TemplateId", "PLAYLIST_TEMPLATE", "Id", "CASCADE")],
     "USER_HAS_IN_LIBRARY": [
@@ -54,7 +50,6 @@ ON_DELETE: dict[str, list[tuple[str, str, str, str]]] = {
         ("DeviceId", "LOGGED_IN_DEVICES", "Id", "CASCADE"),
         ("PlaylistId", "PLAYLIST", "Id", "SET NULL"),
     ],
-    "UPDATES_FAVORITE_BOOKS": [("DeviceId", "LOGGED_IN_DEVICES", "Id", "CASCADE")],
     "UPDATES_BOOK_INFO": [
         ("DeviceId", "LOGGED_IN_DEVICES", "Id", "CASCADE"),
         ("BookId", "BOOK", "Id", "SET NULL"),
