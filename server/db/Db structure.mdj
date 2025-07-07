@@ -6334,30 +6334,6 @@
 				},
 				{
 					"_type": "ERDEntity",
-					"_id": "AAAAAAGX0bVxsaMysGQ=",
-					"_parent": {
-						"$ref": "AAAAAAGXvGPm9LKwQa8="
-					},
-					"name": "UPDATES_FAVORITE_BOOKS",
-					"columns": [
-						{
-							"_type": "ERDColumn",
-							"_id": "AAAAAAGX0bXPzaM/pdM=",
-							"_parent": {
-								"$ref": "AAAAAAGX0bVxsaMysGQ="
-							},
-							"name": "DeviceId",
-							"length": 0,
-							"primaryKey": true,
-							"foreignKey": true,
-							"referenceTo": {
-								"$ref": "AAAAAAGX0aJ+yqH2KOE="
-							}
-						}
-					]
-				},
-				{
-					"_type": "ERDEntity",
 					"_id": "AAAAAAGX0bb1wqNR8jU=",
 					"_parent": {
 						"$ref": "AAAAAAGXvGPm9LKwQa8="
