@@ -137,13 +137,13 @@ Add a new (non-owned) book to the library
 
 -   Request Parameters: None
 -   Request Body Content:
-	- `book`: a number
+    -   `book`: a number
 -   Response Body Content: None
 -   Access Constraints:
-	- user is logged in
+    -   user is logged in
 -   Additional Constraints:
-	- return 404 if `book` does not exist
-	- return 401 if the user cannot read `book`
+    -   return 404 if `book` does not exist
+    -   return 401 if the user cannot read `book`
 
 ### DELETE `musebook/api/library`
 
@@ -151,13 +151,13 @@ Remove a (non-owned) book to the library
 
 -   Request Parameters: None
 -   Request Body Content:
-	- `book`: a number
+    -   `book`: a number
 -   Response Body Content: None
 -   Access Constraints:
-	- user is logged in
+    -   user is logged in
 -   Additional Constraints:
-	- return 404 if `book` does not exist
-	- return 401 if the user does not have `book` in their library
+    -   return 404 if `book` does not exist
+    -   return 401 if the user does not have `book` in their library
 
 ## Book management
 
@@ -677,4 +677,16 @@ Edit a playlist template.
     -   return 404 if `id` is not a valid template
     -   return 401 if the user is not the owner of `id`
 
-TEMPLATE
+## Synchronization
+
+### GET `musebook/api/updates`
+
+Returns the list of APIs to call to get the modifications since the last update.
+
+-   Request Parameters: None
+-   Request Body Content: None
+-   Response Body Content:
+    -   `str[] apis`: the list of APIs to call
+-   Access Constraints:
+    -   user is logged in
+-   Additional Constraints: None
