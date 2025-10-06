@@ -77,6 +77,9 @@ if __name__ == "__main__":
     foreign_keys_matcher = re.compile(
         r"ALTER TABLE `([^`]*)` ADD FOREIGN KEY \(`([^`]*)`\) REFERENCES `([^`]*)`\(`([^`]*)`\)"
     )
+    autoincrement_matcher = re.compile(
+        r",\s*\n\s*PRIMARY KEY \([^)]*\)", re.MULTILINE
+    )
 
     with open(FILE, "r") as f:
         text = "".join(f.readlines())
@@ -134,7 +137,7 @@ if __name__ == "__main__":
 
                 tables[src_tab] = (
                     f"{tables[src_tab]},"
-                    + f"\n\tFOREIGN KEY (`{src_col}`) REFERENCES `{dst_tab}`(`{dst_col}`) "
+                    + f"\n    FOREIGN KEY (`{src_col}`) REFERENCES `{dst_tab}`(`{dst_col}`) "
                     + (f"ON DELETE {action}" if action is not None else "")
                 )
 
@@ -145,6 +148,10 @@ if __name__ == "__main__":
 
     for table in tables.keys():
         out = f"{out}DROP TABLE IF EXISTS `{table}`;\n"
+
+        if "AUTO_INCREMENT" in tables[table]:
+            tables[table] = tables[table].replace("AUTO_INCREMENT", "PRIMARY KEY")
+            tables[table] = re.sub(autoincrement_matcher, "", tables[table])
 
     out = f"{out}PRAGMA FOREIGN_KEYS = 1;\n"
 
