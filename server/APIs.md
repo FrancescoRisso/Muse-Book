@@ -30,6 +30,31 @@ Performs logout.
     -   user is logged in
 -   Additional Constraints: None
 
+### GET `musebook/api/session/pwd-reset/:email`
+
+Requests a password reset link.
+
+-   Request Parameters:
+	- `email`: a string that must include a `@` and a `.` after it
+-   Request Body Content: None
+-   Response Body Content: None
+-   Access Constraints: None
+-   Additional Constraints:
+	- return 401 if `email` does not exist in the database
+
+### POST `musebook/api/session/pwd-reset`
+
+Resets the password for a user.
+
+-   Request Parameters: None
+-   Request Body Content:
+    -   `id`: a number
+    -   `password`: a string that must not be empty
+-   Response Body Content: None
+-   Access Constraints: None
+-   Additional Constraints:
+	- return 401 if `id` is not a valid user
+
 ## User management
 
 ### GET `musebook/api/user-confirm/:id/:salt`
@@ -54,7 +79,7 @@ Register a new user.
 -   Request Body Content:
     -   `username`: a string (if empty, the email is used as username)
     -   `password`: a string that must not be empty
-    -   `email`: a string that must not be empty
+    -   `email`: a string that must include a `@` and a `.` after it
     -   `name`: a string that must not be empty
     -   `surname`: a string that must not be empty
     -   `language`: a string that must not be empty
