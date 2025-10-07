@@ -2,6 +2,7 @@ import { describe, test, expect, beforeEach } from "@jest/globals";
 import request from "supertest";
 import { clearDB, insertBook, insertSong, insertUser, insertUserSearchSong, login, query_db } from "./utils";
 import { app } from "../index";
+import moment from "moment";
 
 beforeEach(clearDB);
 
@@ -295,6 +296,164 @@ describe(`User APIs ("${baseUrl}")`, () => {
 
 			const users = (await query_db("SELECT COUNT(*) FROM USER", []))[0]["COUNT(*)"];
 			expect(users).toBe(1);
+		});
+	});
+
+	describe.skip('Get list of user song searches ("GET /search-song")', () => {
+		test("Successful (with 0 song)", async () => {
+			await insertUser();
+
+			const cookie = await login();
+			const res = request(app).get(`${baseUrl}/search-song`).set("Cookie", cookie);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(200);
+			expect((await res).body).toBe([]);
+		});
+
+		test("Successful (with 1 song)", async () => {
+			const user = await insertUser();
+			const book = await insertBook(user);
+			const song = await insertSong(book, "Song");
+			await insertUserSearchSong(user, song, "2025-01-01");
+
+			const cookie = await login();
+			const res = request(app).get(`${baseUrl}/search-song`).set("Cookie", cookie);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(200);
+			expect((await res).body).toBe([song]);
+		});
+
+		test("Successful (with more songs)", async () => {
+			const user = await insertUser();
+			const book = await insertBook(user);
+			const song1 = await insertSong(book, "Song1");
+			const song2 = await insertSong(book, "Song2");
+			const song3 = await insertSong(book, "Song3");
+			await insertUserSearchSong(user, song3, "2025-01-01");
+			await insertUserSearchSong(user, song1, "2025-01-02");
+			await insertUserSearchSong(user, song2, "2025-01-03");
+
+			const cookie = await login();
+			const res = request(app).get(`${baseUrl}/search-song`).set("Cookie", cookie);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(200);
+			expect((await res).body).toBe([song2, song1, song3]);
+		});
+
+		test("Not logged in", async () => {
+			const user = await insertUser();
+
+			const res = request(app).get(`${baseUrl}/search-song`);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(401);
+		});
+	});
+
+	describe.skip('Add new user search ("POST /search-song")', () => {
+		test("Successful (today)", async () => {
+			const user = await insertUser();
+			const book = await insertBook(user);
+			const song = await insertSong(book);
+
+			const data = { id: song, date: moment().format("YYYY-MM-DD") };
+
+			const cookie = await login();
+			const res = request(app).post(`${baseUrl}/search-song`).send(data).set("Cookie", cookie);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(200);
+
+			const searches = await query_db("SELECT SongId FROM USER_SONG_SEARCH WHERE USER=?", [user]);
+			expect(searches.length).toBe(1);
+			expect(searches[0]["SongId"]).toBe(song);
+		});
+
+		test("Successful (past date)", async () => {
+			const user = await insertUser();
+			const book = await insertBook(user);
+			const song = await insertSong(book);
+
+			const data = { id: song, date: moment().subtract(1, "days").format("YYYY-MM-DD") };
+
+			const cookie = await login();
+			const res = request(app).post(`${baseUrl}/search-song`).send(data).set("Cookie", cookie);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(200);
+
+			const searches = await query_db("SELECT SongId FROM USER_SONG_SEARCH WHERE USER=?", [user]);
+			expect(searches.length).toBe(1);
+			expect(searches[0]["SongId"]).toBe(song);
+		});
+
+		test("Future date", async () => {
+			const user = await insertUser();
+			const book = await insertBook(user);
+			const song = await insertSong(book);
+
+			const data = { id: song, date: moment().add(1, "days").format("YYYY-MM-DD") };
+
+			const cookie = await login();
+			const res = request(app).post(`${baseUrl}/search-song`).send(data).set("Cookie", cookie);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(422);
+
+			const searches = await query_db("SELECT SongId FROM USER_SONG_SEARCH WHERE USER=?", [user]);
+			expect(searches.length).toBe(0);
+		});
+
+		test("Non-existing song", async () => {
+			const user = await insertUser();
+
+			const data = { id: 1, date: moment().format("YYYY-MM-DD") };
+
+			const cookie = await login();
+			const res = request(app).post(`${baseUrl}/search-song`).send(data).set("Cookie", cookie);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(403);
+
+			const searches = await query_db("SELECT SongId FROM USER_SONG_SEARCH WHERE USER=?", [user]);
+			expect(searches.length).toBe(0);
+		});
+
+		test("Non-accessible song", async () => {
+			const user = await insertUser();
+			const otherUser = await insertUser("OtherUser");
+			const book = await insertBook(otherUser, "Book", "A book", "-");
+			const song = await insertSong(book);
+
+			const data = { id: song, date: moment().format("YYYY-MM-DD") };
+
+			const cookie = await login();
+			const res = request(app).post(`${baseUrl}/search-song`).send(data).set("Cookie", cookie);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(403);
+
+			const searches = await query_db("SELECT SongId FROM USER_SONG_SEARCH WHERE USER=?", [user]);
+			expect(searches.length).toBe(0);
+		});
+
+		test("Not logged in", async () => {
+			const user = await insertUser();
+			const book = await insertBook(user);
+			const song = await insertSong(book);
+
+			const data = { id: song, date: moment().format("YYYY-MM-DD") };
+
+			const res = request(app).post(`${baseUrl}/search-song`).send(data);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(401);
+
+			const searches = await query_db("SELECT SongId FROM USER_SONG_SEARCH WHERE USER=?", [user]);
+			expect(searches.length).toBe(0);
 		});
 	});
 });

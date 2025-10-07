@@ -35,12 +35,12 @@ Performs logout.
 Requests a password reset link.
 
 -   Request Parameters:
-	- `email`: a string that must include a `@` and a `.` after it
+    -   `email`: a string that must include a `@` and a `.` after it
 -   Request Body Content: None
 -   Response Body Content: None
 -   Access Constraints: None
 -   Additional Constraints:
-	- return 401 if `email` does not exist in the database
+    -   return 401 if `email` does not exist in the database
 
 ### POST `musebook/api/session/pwd-reset`
 
@@ -53,7 +53,7 @@ Resets the password for a user.
 -   Response Body Content: None
 -   Access Constraints: None
 -   Additional Constraints:
-	- return 401 if `id` is not a valid user
+    -   return 401 if `id` is not a valid user
 
 ## User management
 
@@ -113,11 +113,12 @@ Get the list of the user song searches, sorted by search date descending.
 
 ### POST `musebook/api/user/search-song`
 
-Notify that a song has been searched.
+Notify that a song has been searched on a specific date.
 
 -   Request Parameters: None
 -   Request Body Content:
     -   `id`: a number
+    -   `date`: a date which is not in the future
 -   Response Body Content: None
 -   Access Constraints:
     -   user is logged in

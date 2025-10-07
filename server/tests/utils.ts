@@ -16,7 +16,7 @@ export const clearDB = () => {
 
 export const query_db = (query: string, params: any[]): Promise<any[]> => {
 	return new Promise<any[]>((resolve, reject) => {
-		db.all(query, params, (err, res) => {
+		db.all(query, params, (err: any, res: any[] | PromiseLike<any[]>) => {
 			if (err) reject(err);
 			else resolve(res);
 		});
@@ -42,11 +42,52 @@ export const insertUser = async (
 	`;
 
 	return new Promise<number>((resolve, reject) => {
-		db.run(query, [user, salt, testHash, mail, name, surname, lang], async (err) => {
+		db.run(query, [user, salt, testHash, mail, name, surname, lang], async (err: any) => {
 			if (err) return reject(err);
 			const id = (await query_db(`SELECT Id FROM ${table} WHERE Username=?`, [user]))[0]["Id"];
 			return resolve(id);
 		});
+	});
+};
+
+export const insertBook = async (owner: number, title = "A book", descr = "A test book", permiss = "R", cover = "") => {
+	const query = `
+	INSERT INTO BOOK(Owner, Title, Description, GeneralPermission, Cover)
+	VALUES(?, ?, ?, ?, ?);
+	`;
+
+	return new Promise<number>((resolve, reject) => {
+		db.run(query, [owner, title, descr, permiss, cover], async (err: any) => {
+			if (err) return reject(err);
+			const id = (await query_db(`SELECT Id FROM BOOK WHERE Title=? AND Owner=?`, [title, owner]))[0]["Id"];
+			return resolve(id);
+		});
+	});
+};
+
+export const insertSong = async (bookId: number, title = "Test song") => {
+	const query = `
+	INSERT INTO SONG(BookId, Title)
+	VALUES(?, ?);
+	`;
+
+	return new Promise<number>((resolve, reject) => {
+		db.run(query, [bookId, title], async (err: any) => {
+			if (err) return reject(err);
+			const id = (await query_db(`SELECT Id FROM SONG WHERE Title=? AND BookId=?`, [title, bookId]))[0]["Id"];
+			return resolve(id);
+		});
+	});
+};
+
+export const insertUserSearchSong = async (user: number, song: number, date: string): Promise<void> => {
+	const query = `
+	INSERT INTO USER_SONG_SEARCH(UserId, SongId, Date)
+	VALUES(?, ?, ?);
+	`;
+
+	return new Promise<void>((resolve, reject) => {
+		db.run(query, [user, song, date], (err: any) => (err ? reject(err) : resolve()));
 	});
 };
 
