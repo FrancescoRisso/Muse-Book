@@ -8,7 +8,7 @@
 	"keywords": [],
 	"scripts": {
 		"start": "nodemon index.ts",
-		"test": "set NODE_ENV=test && jest --runInBand --colors --detectOpenHandles --forceExit --testTimeout=30000 --verbose"
+		"test": "set NODE_ENV=test && jest --runInBand --colors --detectOpenHandles --forceExit --verbose"
 	},
 	"dependencies": {
 		"@types/passport": "^1.0.17",
