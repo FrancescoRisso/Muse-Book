@@ -36,8 +36,7 @@ CREATE TABLE `USER` (
     `Email` TEXT NOT NULL,
     `Name` TEXT NOT NULL,
     `Surname` TEXT NOT NULL,
-    `Language` TEXT NOT NULL,
-    `OfflineData` BOOLEAN NOT NULL
+    `Language` TEXT NOT NULL
 );
 
 CREATE TABLE `BOOK` (

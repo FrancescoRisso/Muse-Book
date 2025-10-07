@@ -180,23 +180,6 @@
 											"top": 381,
 											"width": 294.9423828125,
 											"height": 13
-										},
-										{
-											"_type": "ERDColumnView",
-											"_id": "AAAAAAGXwbTfWBF0PI8=",
-											"_parent": {
-												"$ref": "AAAAAAGXvGP7YrK54rI="
-											},
-											"model": {
-												"$ref": "AAAAAAGXwbTfVBFxBUI="
-											},
-											"visible": false,
-											"font": "Arial;13;0",
-											"parentStyle": true,
-											"left": 1773,
-											"top": 396,
-											"width": 294.9423828125,
-											"height": 13
 										}
 									],
 									"font": "Arial;13;0",
@@ -3674,7 +3657,7 @@
 									"parentStyle": true,
 									"left": 2624,
 									"top": 325,
-									"width": 310.48388671875,
+									"width": 312.42626953125,
 									"height": 13,
 									"text": "UPDATES_PLAYLIST_TEMPLATE"
 								},
@@ -3701,7 +3684,7 @@
 											"parentStyle": true,
 											"left": 2629,
 											"top": 348,
-											"width": 300.48388671875,
+											"width": 302.42626953125,
 											"height": 13
 										},
 										{
@@ -3717,7 +3700,7 @@
 											"parentStyle": true,
 											"left": 2629,
 											"top": 363,
-											"width": 300.48388671875,
+											"width": 302.42626953125,
 											"height": 13
 										},
 										{
@@ -3733,7 +3716,7 @@
 											"parentStyle": true,
 											"left": 2629,
 											"top": 378,
-											"width": 300.48388671875,
+											"width": 302.42626953125,
 											"height": 13
 										}
 									],
@@ -3741,7 +3724,7 @@
 									"parentStyle": true,
 									"left": 2624,
 									"top": 343,
-									"width": 310.48388671875,
+									"width": 312.42626953125,
 									"height": 53
 								}
 							],
@@ -3749,7 +3732,7 @@
 							"parentStyle": false,
 							"left": 2624,
 							"top": 320,
-							"width": 310.48388671875,
+							"width": 312.42626953125,
 							"height": 76,
 							"nameLabel": {
 								"$ref": "AAAAAAGX0acuBqJdGG8="
@@ -4010,7 +3993,7 @@
 									"parentStyle": true,
 									"left": 2624,
 									"top": 597,
-									"width": 299.90234375,
+									"width": 302.0732421875,
 									"height": 13,
 									"text": "UPDATES_PLAYLIST"
 								},
@@ -4037,7 +4020,7 @@
 											"parentStyle": true,
 											"left": 2629,
 											"top": 620,
-											"width": 289.90234375,
+											"width": 292.0732421875,
 											"height": 13
 										},
 										{
@@ -4053,7 +4036,7 @@
 											"parentStyle": true,
 											"left": 2629,
 											"top": 635,
-											"width": 289.90234375,
+											"width": 292.0732421875,
 											"height": 13
 										},
 										{
@@ -4069,7 +4052,7 @@
 											"parentStyle": true,
 											"left": 2629,
 											"top": 650,
-											"width": 289.90234375,
+											"width": 292.0732421875,
 											"height": 13
 										}
 									],
@@ -4077,7 +4060,7 @@
 									"parentStyle": true,
 									"left": 2624,
 									"top": 615,
-									"width": 299.90234375,
+									"width": 302.0732421875,
 									"height": 53
 								}
 							],
@@ -4085,7 +4068,7 @@
 							"parentStyle": false,
 							"left": 2624,
 							"top": 592,
-							"width": 299.90234375,
+							"width": 302.0732421875,
 							"height": 76,
 							"nameLabel": {
 								"$ref": "AAAAAAGX0a9A6qMEIkw="
@@ -4114,7 +4097,7 @@
 									"parentStyle": true,
 									"left": 2624,
 									"top": 685,
-									"width": 296.296875,
+									"width": 297.71875,
 									"height": 13,
 									"text": "UPDATES_BOOK_INFO"
 								},
@@ -4141,7 +4124,7 @@
 											"parentStyle": true,
 											"left": 2629,
 											"top": 708,
-											"width": 286.296875,
+											"width": 287.71875,
 											"height": 13
 										},
 										{
@@ -4157,7 +4140,7 @@
 											"parentStyle": true,
 											"left": 2629,
 											"top": 723,
-											"width": 286.296875,
+											"width": 287.71875,
 											"height": 13
 										},
 										{
@@ -4173,7 +4156,7 @@
 											"parentStyle": true,
 											"left": 2629,
 											"top": 738,
-											"width": 286.296875,
+											"width": 287.71875,
 											"height": 13
 										}
 									],
@@ -4181,7 +4164,7 @@
 									"parentStyle": true,
 									"left": 2624,
 									"top": 703,
-									"width": 296.296875,
+									"width": 297.71875,
 									"height": 53
 								}
 							],
@@ -4189,7 +4172,7 @@
 							"parentStyle": false,
 							"left": 2624,
 							"top": 680,
-							"width": 296.296875,
+							"width": 297.71875,
 							"height": 76,
 							"nameLabel": {
 								"$ref": "AAAAAAGX0bb1wqNUj5M="
@@ -4307,7 +4290,7 @@
 									"parentStyle": true,
 									"left": 2624,
 									"top": 829,
-									"width": 296.296875,
+									"width": 297.71875,
 									"height": 13,
 									"text": "UPDATES_SONG"
 								},
@@ -4334,7 +4317,7 @@
 											"parentStyle": true,
 											"left": 2629,
 											"top": 852,
-											"width": 286.296875,
+											"width": 287.71875,
 											"height": 13
 										},
 										{
@@ -4350,7 +4333,7 @@
 											"parentStyle": true,
 											"left": 2629,
 											"top": 867,
-											"width": 286.296875,
+											"width": 287.71875,
 											"height": 13
 										},
 										{
@@ -4366,7 +4349,7 @@
 											"parentStyle": true,
 											"left": 2629,
 											"top": 882,
-											"width": 286.296875,
+											"width": 287.71875,
 											"height": 13
 										}
 									],
@@ -4374,7 +4357,7 @@
 									"parentStyle": true,
 									"left": 2624,
 									"top": 847,
-									"width": 296.296875,
+									"width": 297.71875,
 									"height": 53
 								}
 							],
@@ -4382,7 +4365,7 @@
 							"parentStyle": false,
 							"left": 2624,
 							"top": 824,
-							"width": 296.296875,
+							"width": 297.71875,
 							"height": 76,
 							"nameLabel": {
 								"$ref": "AAAAAAGX0bvFMaOWEfs="
@@ -4411,7 +4394,7 @@
 									"parentStyle": true,
 									"left": 2624,
 									"top": 917,
-									"width": 297.7314453125,
+									"width": 303.04443359375,
 									"height": 13,
 									"text": "UPDATES_SONG_VARIANT"
 								},
@@ -4438,7 +4421,7 @@
 											"parentStyle": true,
 											"left": 2629,
 											"top": 940,
-											"width": 287.7314453125,
+											"width": 293.04443359375,
 											"height": 13
 										},
 										{
@@ -4454,7 +4437,7 @@
 											"parentStyle": true,
 											"left": 2629,
 											"top": 955,
-											"width": 287.7314453125,
+											"width": 293.04443359375,
 											"height": 13
 										},
 										{
@@ -4470,7 +4453,7 @@
 											"parentStyle": true,
 											"left": 2629,
 											"top": 970,
-											"width": 287.7314453125,
+											"width": 293.04443359375,
 											"height": 13
 										}
 									],
@@ -4478,7 +4461,7 @@
 									"parentStyle": true,
 									"left": 2624,
 									"top": 935,
-									"width": 297.7314453125,
+									"width": 303.04443359375,
 									"height": 53
 								}
 							],
@@ -4486,7 +4469,7 @@
 							"parentStyle": false,
 							"left": 2624,
 							"top": 912,
-							"width": 297.7314453125,
+							"width": 303.04443359375,
 							"height": 76,
 							"nameLabel": {
 								"$ref": "AAAAAAGX0b2zJaO6Yug="
@@ -4931,16 +4914,6 @@
 							},
 							"name": "Language",
 							"type": "TEXT",
-							"length": 0
-						},
-						{
-							"_type": "ERDColumn",
-							"_id": "AAAAAAGXwbTfVBFxBUI=",
-							"_parent": {
-								"$ref": "AAAAAAGXvGP7YrK1zRw="
-							},
-							"name": "OfflineData",
-							"type": "BOOLEAN",
 							"length": 0
 						}
 					]
