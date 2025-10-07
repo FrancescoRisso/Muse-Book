@@ -134,12 +134,12 @@ Change user data.
 -   Request Body Content:
     -   `username`: a string (if empty, the email is used as username)
     -   `password`: a string that must not be empty
-    -   `email`: a string that must not be empty
     -   `name`: a string that must not be empty
     -   `surname`: a string that must not be empty
     -   `language`: a string that must not be empty
 -   Response Body Content: None
--   Access Constraints: None
+-   Access Constraints:
+    -   user is logged in
 -   Additional Constraints:
     -   return 409 if `username` is already taken
 

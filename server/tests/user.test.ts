@@ -3,6 +3,7 @@ import request from "supertest";
 import { clearDB, insertBook, insertSong, insertUser, insertUserSearchSong, login, query_db } from "./utils";
 import { app } from "../index";
 import moment from "moment";
+import { createHash } from "crypto";
 
 beforeEach(clearDB);
 
@@ -454,6 +455,191 @@ describe(`User APIs ("${baseUrl}")`, () => {
 
 			const searches = await query_db("SELECT SongId FROM USER_SONG_SEARCH WHERE USER=?", [user]);
 			expect(searches.length).toBe(0);
+		});
+	});
+
+	describe.skip('Change user data ("PATCH /")', () => {
+		const userDataChanger = async (
+			username: string,
+			password: string,
+			name: string,
+			surname: string,
+			language: string,
+			id: number,
+		) => {
+			const toSend = { username, password, name, surname, language };
+
+			const { Salt: salt, Email: email } = (await query_db("SELECT Salt, Email FROM USER WHERE Id=?", [id]))[0];
+
+			const expected = {
+				Username: username || email,
+				Email: email,
+				Name: name,
+				Surname: surname,
+				Language: language,
+				Hash: createHash("sha256").update(`${toSend.password}${salt}`).digest("hex"),
+				Id: id,
+				Salt: salt,
+			};
+
+			return [toSend, expected];
+		};
+
+		test("Correctly change data", async () => {
+			const id = await insertUser();
+			const [user, user_expected] = await userDataChanger("NewUser", "NewPass", "Luca", "Bianchi", "EN", id);
+
+			const cookie = await login();
+			const res = request(app).patch(`${baseUrl}`).send(user).set("Cookie", cookie);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(200);
+
+			const user_db = (await query_db(`SELECT * FROM USER WHERE Id=?`, [id]))[0];
+			expect(user_db).toEqual(user_expected);
+		});
+
+		test("Correctly change data (no username)", async () => {
+			const id = await insertUser();
+			const [user, user_expected] = await userDataChanger("", "NewPass", "Luca", "Bianchi", "EN", id);
+
+			const cookie = await login();
+			const res = request(app).patch(`${baseUrl}`).send(user).set("Cookie", cookie);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(200);
+
+			const user_db = (await query_db(`SELECT * FROM USER WHERE Id=?`, [id]))[0];
+			expect(user_db).toEqual(user_expected);
+		});
+
+		const checkMissingDataAPI = async (user: Record<string, string>) => {
+			const id = await insertUser();
+
+			const cookie = await login();
+			const res = request(app).patch(`${baseUrl}`).send(user).set("Cookie", cookie);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(422);
+		};
+
+		test("Missing username", async () => {
+			await checkMissingDataAPI({
+				password: "NewPass",
+				name: "Luca",
+				surname: "Bianchi",
+				language: "EN",
+			});
+		});
+
+		test("Empty password", async () => {
+			await checkMissingDataAPI({
+				username: "NewUser",
+				password: "",
+				name: "Luca",
+				surname: "Bianchi",
+				language: "EN",
+			});
+		});
+
+		test("Missing password", async () => {
+			await checkMissingDataAPI({
+				username: "NewUser",
+				name: "Luca",
+				surname: "Bianchi",
+				language: "EN",
+			});
+		});
+
+		test("Empty name", async () => {
+			await checkMissingDataAPI({
+				username: "NewUser",
+				password: "NewPass",
+				name: "",
+				surname: "Bianchi",
+				language: "EN",
+			});
+		});
+
+		test("Missing name", async () => {
+			await checkMissingDataAPI({
+				username: "NewUser",
+				password: "NewPass",
+				surname: "Bianchi",
+				language: "EN",
+			});
+		});
+
+		test("Empty surname", async () => {
+			await checkMissingDataAPI({
+				username: "NewUser",
+				password: "NewPass",
+				name: "Luca",
+				surname: "",
+				language: "EN",
+			});
+		});
+
+		test("Missing surname", async () => {
+			await checkMissingDataAPI({
+				username: "NewUser",
+				password: "NewPass",
+				name: "Luca",
+				language: "EN",
+			});
+		});
+
+		test("Missing language", async () => {
+			await checkMissingDataAPI({
+				username: "NewUser",
+				password: "NewPass",
+				name: "Luca",
+				surname: "Bianchi",
+			});
+		});
+
+		test("Empty language", async () => {
+			await checkMissingDataAPI({
+				username: "NewUser",
+				password: "NewPass",
+				name: "Luca",
+				surname: "Bianchi",
+				language: "",
+			});
+		});
+
+		test("Not logged in", async () => {
+			const id = await insertUser();
+			const user = { username: "NewUser", password: "NewPass", name: "Luca", surname: "Bianchi", language: "EN" };
+
+			const res = request(app).patch(`${baseUrl}`).send(user);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(401);
+		});
+
+		test("Username taken", async () => {
+			await insertUser();
+			await insertUser("NewUser");
+			const user = { username: "NewUser", password: "NewPass", name: "Luca", surname: "Bianchi", language: "EN" };
+
+			const cookie = await login();
+			const res = request(app).patch(`${baseUrl}`).send(user).set("Cookie", cookie);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(409);
+		});
+
+		test("Username taken (not confirmed)", async () => {
+			await insertUser();
+			await insertUser("NewUser", "pwd", 111, "new@user.com", "Giorgio", "Verdi", "IT", false);
+			const user = { username: "NewUser", password: "NewPass", name: "Luca", surname: "Bianchi", language: "EN" };
+
+			const cookie = await login();
+			const res = request(app).patch(`${baseUrl}`).send(user).set("Cookie", cookie);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(409);
 		});
 	});
 });
