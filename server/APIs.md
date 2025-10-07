@@ -68,8 +68,8 @@ Confirm a user's email
 -   Response Body Content: None
 -   Access Constraints: None
 -   Additional Constraints:
-    -   return 401 if `id` is not an unconfirmed email user
-    -   return 401 if `salt` does not match the salt of `id`
+    -   return 404 if `id` is not an unconfirmed email user
+    -   return 409 if `salt` does not match the salt of `id`
 
 ### POST `musebook/api/user`
 
@@ -123,7 +123,7 @@ Notify that a song has been searched.
     -   user is logged in
 -   Additional Constraints:
     -   return 404 if `id` is not a valid song
-    -   return 403 if the user
+    -   return 403 if the user does not have access to that song
 
 ### PATCH `musebook/api/user`
 
