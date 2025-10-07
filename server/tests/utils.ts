@@ -23,18 +23,30 @@ export const query_db = (query: string, params: any[]): Promise<any[]> => {
 	});
 };
 
-export const insertDefaultUser = async () => {
-	const testPwd = "pwd";
-	const testSalt = 123456789;
-	const testHash = createHash("sha256").update(`${testPwd}${testSalt}`).digest("hex");
+export const insertUser = async (
+	user = "User123",
+	pwd = "pwd",
+	salt = 123456789,
+	mail = "user@name.com",
+	name = "Mario",
+	surname = "Rossi",
+	lang = "IT",
+	confirmed = true,
+) => {
+	const testHash = createHash("sha256").update(`${pwd}${salt}`).digest("hex");
+	const table = confirmed ? "USER" : "UNCONFIRMED_USER";
 
-	const sessionDb = `
-	INSERT INTO USER(Username, Salt, Hash, Email, Name, Surname, Language, OfflineData)
-	VALUES("User123", ${testSalt}, "${testHash}", "user@name.com", "Mario", "Rossi", "IT", TRUE);
+	const query = `
+	INSERT INTO ${table}(Username, Salt, Hash, Email, Name, Surname, Language)
+	VALUES(?, ?, ?, ?, ?, ?, ?);
 	`;
 
-	return new Promise<void>((resolve, reject) => {
-		db.run(sessionDb, [], (err) => (err ? reject(err) : resolve()));
+	return new Promise<number>((resolve, reject) => {
+		db.run(query, [user, salt, testHash, mail, name, surname, lang], async (err) => {
+			if (err) return reject(err);
+			const id = (await query_db(`SELECT Id FROM ${table} WHERE Username=?`, [user]))[0]["Id"];
+			return resolve(id);
+		});
 	});
 };
 
