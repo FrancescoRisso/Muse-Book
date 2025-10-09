@@ -184,8 +184,8 @@ Remove a (non-owned) book to the library
 -   Access Constraints:
     -   user is logged in
 -   Additional Constraints:
-    -   return 404 if `book` does not exist
-    -   return 401 if the user does not have `book` in their library
+    -   return 404 if the user does not have `book` in their library
+	-	return 401 if `book` is owned by the user
 
 ## Book management
 

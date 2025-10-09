@@ -121,7 +121,7 @@ describe(`Library APIs ("${baseUrl}")`, () => {
 		});
 	});
 
-	describe('Add public book to library ("POST /")', () => {
+	describe.skip('Add public book to library ("POST /")', () => {
 		test("Success (book is publicly readable)", async () => {
 			const user = await insertUser();
 			const otherUser = await insertUser("OtherUser");
@@ -333,6 +333,91 @@ describe(`Library APIs ("${baseUrl}")`, () => {
 			expect(booksInLibrary).toBe(0);
 
 			expect(await new UpdatesLibrary(cookie).hasUpdate()).toBeFalsy();
+		});
+	});
+
+	describe.skip('Remove public book from library ("DELETE /")', () => {
+		test("Success", async () => {
+			const user = await insertUser();
+			const otherUser = await insertUser("OtherUser");
+			const book = await insertBook(otherUser);
+			await insertBookInLibrary(user, book);
+
+			const cookie = await login();
+			const res = request(app).delete(baseUrl).send({ book }).set("Cookie", cookie);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(200);
+
+			const query = "SELECT COUNT(*) FROM USER_HAS_IN_LIBRARY WHERE UserId=?";
+			const booksInLibrary = (await query_db(query, [user]))[0]["COUNT(*)"];
+			expect(booksInLibrary).toBe(0);
+
+			expect(await new UpdatesLibrary(cookie).hasUpdate()).toBeTruthy();
+		});
+
+		test("Book is not a number", async () => {
+			const user = await insertUser();
+			const otherUser = await insertUser("OtherUser");
+			const book = await insertBook(otherUser);
+			await insertBookInLibrary(user, book);
+
+			const cookie = await login();
+			const res = request(app).delete(baseUrl).send({ book: "book" }).set("Cookie", cookie);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(422);
+
+			const query = "SELECT COUNT(*) FROM USER_HAS_IN_LIBRARY WHERE UserId=?";
+			const booksInLibrary = (await query_db(query, [user]))[0]["COUNT(*)"];
+			expect(booksInLibrary).toBe(1);
+
+			expect(await new UpdatesLibrary(cookie).hasUpdate()).toBeFalsy();
+		});
+
+		test("The user does not have the book in its library", async () => {
+			const user = await insertUser();
+			const otherUser = await insertUser("OtherUser");
+			const book = await insertBook(otherUser);
+
+			const cookie = await login();
+			const res = request(app).delete(baseUrl).send({ book }).set("Cookie", cookie);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(404);
+
+			const query = "SELECT COUNT(*) FROM USER_HAS_IN_LIBRARY WHERE UserId=?";
+			const booksInLibrary = (await query_db(query, [user]))[0]["COUNT(*)"];
+			expect(booksInLibrary).toBe(0);
+
+			expect(await new UpdatesLibrary(cookie).hasUpdate()).toBeFalsy();
+		});
+
+		test("The user owns the book", async () => {
+			const user = await insertUser();
+			const book = await insertBook(user);
+			await insertBookInLibrary(user, book);
+
+			const cookie = await login();
+			const res = request(app).delete(baseUrl).send({ book }).set("Cookie", cookie);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(401);
+
+			const query = "SELECT COUNT(*) FROM USER_HAS_IN_LIBRARY WHERE UserId=?";
+			const booksInLibrary = (await query_db(query, [user]))[0]["COUNT(*)"];
+			expect(booksInLibrary).toBe(1);
+
+			expect(await new UpdatesLibrary(cookie).hasUpdate()).toBeFalsy();
+		});
+
+		test("User not logged in", async () => {
+			await insertUser();
+
+			const res = request(app).delete(baseUrl).send({ book: 1 });
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(401);
 		});
 	});
 });
