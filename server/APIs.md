@@ -159,7 +159,9 @@ Get the list of books that the logged user has in their library.
 
 ### POST `musebook/api/library`
 
-Add a new (non-owned) book to the library
+Add a new book to the library.
+If the book is already in the library, return 200 without doing anything.
+Own books are in the library by default, therefore calling on them is pointless.
 
 -   Request Parameters: None
 -   Request Body Content:

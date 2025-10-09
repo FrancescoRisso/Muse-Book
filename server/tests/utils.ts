@@ -102,6 +102,17 @@ export const insertBookInLibrary = async (user: number, book: number, favourite 
 	});
 };
 
+export const addCustomBookPermission = async (user: number, book: number, perm: string) => {
+	const query = `
+	INSERT INTO BOOK_CUSTOM_PERMISSION(UserId, BookId, Permission)
+	VALUES(?, ?, ?);
+	`;
+
+	return new Promise<void>((resolve, reject) => {
+		db.run(query, [user, book, perm], (err: any) => (err ? reject(err) : resolve()));
+	});
+};
+
 export const login = async (): Promise<string> => {
 	return new Promise<string>((resolve, reject) => {
 		request(app)
