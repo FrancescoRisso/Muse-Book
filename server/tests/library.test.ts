@@ -11,6 +11,7 @@ import {
 } from "./utils";
 import { app } from "../index";
 import { BookInLibrary } from "../../types";
+import { UpdatesLibrary } from "./update_tables_utils";
 
 beforeEach(clearDB);
 
@@ -120,7 +121,7 @@ describe(`Library APIs ("${baseUrl}")`, () => {
 		});
 	});
 
-	describe.skip('Add public book to library ("POST /")', () => {
+	describe('Add public book to library ("POST /")', () => {
 		test("Success (book is publicly readable)", async () => {
 			const user = await insertUser();
 			const otherUser = await insertUser("OtherUser");
@@ -135,8 +136,9 @@ describe(`Library APIs ("${baseUrl}")`, () => {
 			const query = "SELECT COUNT(*) FROM USER_HAS_IN_LIBRARY WHERE UserId=?";
 			const booksInLibrary = (await query_db(query, [user]))[0]["COUNT(*)"];
 			expect(booksInLibrary).toBe(1);
-		});
 
+			expect(await new UpdatesLibrary(cookie).hasUpdate()).toBeTruthy();
+		});
 		test("Success (book is publicly writable)", async () => {
 			const user = await insertUser();
 			const otherUser = await insertUser("OtherUser");
@@ -151,6 +153,8 @@ describe(`Library APIs ("${baseUrl}")`, () => {
 			const query = "SELECT COUNT(*) FROM USER_HAS_IN_LIBRARY WHERE UserId=?";
 			const booksInLibrary = (await query_db(query, [user]))[0]["COUNT(*)"];
 			expect(booksInLibrary).toBe(1);
+
+			expect(await new UpdatesLibrary(cookie).hasUpdate()).toBeTruthy();
 		});
 
 		test("Success (another book already in library)", async () => {
@@ -169,6 +173,8 @@ describe(`Library APIs ("${baseUrl}")`, () => {
 			const query = "SELECT COUNT(*) FROM USER_HAS_IN_LIBRARY WHERE UserId=?";
 			const booksInLibrary = (await query_db(query, [user]))[0]["COUNT(*)"];
 			expect(booksInLibrary).toBe(2);
+
+			expect(await new UpdatesLibrary(cookie).hasUpdate()).toBeTruthy();
 		});
 
 		test("Book already in library (do nothing)", async () => {
@@ -186,6 +192,8 @@ describe(`Library APIs ("${baseUrl}")`, () => {
 			const query = "SELECT COUNT(*) FROM USER_HAS_IN_LIBRARY WHERE UserId=?";
 			const booksInLibrary = (await query_db(query, [user]))[0]["COUNT(*)"];
 			expect(booksInLibrary).toBe(1);
+
+			expect(await new UpdatesLibrary(cookie).hasUpdate()).toBeFalsy();
 		});
 
 		test("Own book (do nothing)", async () => {
@@ -202,6 +210,8 @@ describe(`Library APIs ("${baseUrl}")`, () => {
 			const query = "SELECT COUNT(*) FROM USER_HAS_IN_LIBRARY WHERE UserId=?";
 			const booksInLibrary = (await query_db(query, [user]))[0]["COUNT(*)"];
 			expect(booksInLibrary).toBe(1);
+
+			expect(await new UpdatesLibrary(cookie).hasUpdate()).toBeFalsy();
 		});
 
 		test("Not logged in", async () => {
@@ -230,6 +240,8 @@ describe(`Library APIs ("${baseUrl}")`, () => {
 			const query = "SELECT COUNT(*) FROM USER_HAS_IN_LIBRARY WHERE UserId=?";
 			const booksInLibrary = (await query_db(query, [user]))[0]["COUNT(*)"];
 			expect(booksInLibrary).toBe(0);
+
+			expect(await new UpdatesLibrary(cookie).hasUpdate()).toBeFalsy();
 		});
 
 		test("Book does not exist", async () => {
@@ -244,6 +256,8 @@ describe(`Library APIs ("${baseUrl}")`, () => {
 			const query = "SELECT COUNT(*) FROM USER_HAS_IN_LIBRARY WHERE UserId=?";
 			const booksInLibrary = (await query_db(query, [user]))[0]["COUNT(*)"];
 			expect(booksInLibrary).toBe(0);
+
+			expect(await new UpdatesLibrary(cookie).hasUpdate()).toBeFalsy();
 		});
 
 		test("Book is not publicly accessible", async () => {
@@ -260,6 +274,8 @@ describe(`Library APIs ("${baseUrl}")`, () => {
 			const query = "SELECT COUNT(*) FROM USER_HAS_IN_LIBRARY WHERE UserId=?";
 			const booksInLibrary = (await query_db(query, [user]))[0]["COUNT(*)"];
 			expect(booksInLibrary).toBe(0);
+
+			expect(await new UpdatesLibrary(cookie).hasUpdate()).toBeFalsy();
 		});
 
 		test("Book is not publicly accessible, but user has custom permissions to read it", async () => {
@@ -277,6 +293,8 @@ describe(`Library APIs ("${baseUrl}")`, () => {
 			const query = "SELECT COUNT(*) FROM USER_HAS_IN_LIBRARY WHERE UserId=?";
 			const booksInLibrary = (await query_db(query, [user]))[0]["COUNT(*)"];
 			expect(booksInLibrary).toBe(1);
+
+			expect(await new UpdatesLibrary(cookie).hasUpdate()).toBeTruthy();
 		});
 
 		test("Book is not publicly accessible, but user has custom permissions to write it", async () => {
@@ -294,6 +312,8 @@ describe(`Library APIs ("${baseUrl}")`, () => {
 			const query = "SELECT COUNT(*) FROM USER_HAS_IN_LIBRARY WHERE UserId=?";
 			const booksInLibrary = (await query_db(query, [user]))[0]["COUNT(*)"];
 			expect(booksInLibrary).toBe(1);
+
+			expect(await new UpdatesLibrary(cookie).hasUpdate()).toBeTruthy();
 		});
 
 		test("Book is publicly accessible, but user is banned from it", async () => {
@@ -311,6 +331,8 @@ describe(`Library APIs ("${baseUrl}")`, () => {
 			const query = "SELECT COUNT(*) FROM USER_HAS_IN_LIBRARY WHERE UserId=?";
 			const booksInLibrary = (await query_db(query, [user]))[0]["COUNT(*)"];
 			expect(booksInLibrary).toBe(0);
+
+			expect(await new UpdatesLibrary(cookie).hasUpdate()).toBeFalsy();
 		});
 	});
 });
