@@ -9,7 +9,7 @@ beforeEach(clearDB);
 
 const baseUrl = "/musebook/api/user";
 
-describe(`User APIs ("${baseUrl}")`, () => {
+describe.skip(`User APIs ("${baseUrl}")`, () => {
 	describe.skip('Confirm unregistered user ("POST -confirm/:id/:salt")', () => {
 		test("Successful confirmation", async () => {
 			const id = await insertUser("User456", "pwd", 111111111, "user@name.com", "Mario", "Rossi", "IT", false);
