@@ -91,6 +91,17 @@ export const insertUserSearchSong = async (user: number, song: number, date: str
 	});
 };
 
+export const insertBookInLibrary = async (user: number, book: number, favourite = false) => {
+	const query = `
+	INSERT INTO USER_HAS_IN_LIBRARY(UserId, BookId, Favorite)
+	VALUES(?, ?, ?);
+	`;
+
+	return new Promise<void>((resolve, reject) => {
+		db.run(query, [user, book, favourite], (err: any) => (err ? reject(err) : resolve()));
+	});
+};
+
 export const login = async (): Promise<string> => {
 	return new Promise<string>((resolve, reject) => {
 		request(app)
