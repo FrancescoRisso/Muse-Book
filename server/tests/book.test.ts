@@ -1,0 +1,409 @@
+import { describe, test, expect, beforeEach } from "@jest/globals";
+import request from "supertest";
+import {
+	addCustomBookPermission,
+	clearDB,
+	insertBook,
+	insertBookInLibrary,
+	insertSong,
+	insertUser,
+	login,
+} from "./utils";
+import { app } from "../index";
+
+beforeEach(clearDB);
+
+const baseUrl = "/musebook/api/book";
+
+describe(`Book APIs ("${baseUrl}")`, () => {
+	describe.skip('Get basic data of all accessible books ("GET /list")', () => {
+		test("No accessible book", async () => {
+			await insertUser();
+			const otherUser = await insertUser("OtherUser");
+			await insertBook(otherUser, "Book", "Private book", "-");
+
+			const cookie = await login();
+			const res = request(app).get(`${baseUrl}/list`).set("Cookie", cookie);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(200);
+			expect((await res).body).toEqual([]);
+		});
+
+		test("Public book (not in library, publicly readable)", async () => {
+			await insertUser();
+			const otherUser = await insertUser("OtherUser");
+			const book = await insertBook(otherUser, "Book");
+			const song1 = await insertSong(book, "Song1");
+			const song2 = await insertSong(book, "Song2");
+
+			const cookie = await login();
+			const res = request(app).get(`${baseUrl}/list`).set("Cookie", cookie);
+
+			const res_expected = [
+				{
+					owner: otherUser,
+					ownerName: "OtherUser",
+					title: "Book",
+					songs: [
+						{ id: song1, title: "Song1" },
+						{ id: song2, title: "Song2" },
+					],
+				},
+			];
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(200);
+			expect((await res).body).toEqual(res_expected);
+		});
+
+		test("Public book (in library, publicly readable)", async () => {
+			const user = await insertUser();
+			const otherUser = await insertUser("OtherUser");
+			const book = await insertBook(otherUser, "Book");
+			const song1 = await insertSong(book, "Song1");
+			const song2 = await insertSong(book, "Song2");
+			await insertBookInLibrary(user, book);
+
+			const cookie = await login();
+			const res = request(app).get(`${baseUrl}/list`).set("Cookie", cookie);
+
+			const res_expected = [
+				{
+					owner: otherUser,
+					ownerName: "OtherUser",
+					title: "Book",
+					songs: [
+						{ id: song1, title: "Song1" },
+						{ id: song2, title: "Song2" },
+					],
+				},
+			];
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(200);
+			expect((await res).body).toEqual(res_expected);
+		});
+
+		test("Public book (not in library, publicly writable)", async () => {
+			await insertUser();
+			const otherUser = await insertUser("OtherUser");
+			const book = await insertBook(otherUser, "Book", "Writable book", "W");
+			const song1 = await insertSong(book, "Song1");
+			const song2 = await insertSong(book, "Song2");
+
+			const cookie = await login();
+			const res = request(app).get(`${baseUrl}/list`).set("Cookie", cookie);
+
+			const res_expected = [
+				{
+					owner: otherUser,
+					ownerName: "OtherUser",
+					title: "Book",
+					songs: [
+						{ id: song1, title: "Song1" },
+						{ id: song2, title: "Song2" },
+					],
+				},
+			];
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(200);
+			expect((await res).body).toEqual(res_expected);
+		});
+
+		test("Public book (in library, publicly writable)", async () => {
+			const user = await insertUser();
+			const otherUser = await insertUser("OtherUser");
+			const book = await insertBook(otherUser, "Book", "Writable book", "W");
+			const song1 = await insertSong(book, "Song1");
+			const song2 = await insertSong(book, "Song2");
+			await insertBookInLibrary(user, book);
+
+			const cookie = await login();
+			const res = request(app).get(`${baseUrl}/list`).set("Cookie", cookie);
+
+			const res_expected = [
+				{
+					owner: otherUser,
+					ownerName: "OtherUser",
+					title: "Book",
+					songs: [
+						{ id: song1, title: "Song1" },
+						{ id: song2, title: "Song2" },
+					],
+				},
+			];
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(200);
+			expect((await res).body).toEqual(res_expected);
+		});
+
+		test("Own book", async () => {
+			const user = await insertUser();
+			const book = await insertBook(user, "Book");
+			const song1 = await insertSong(book, "Song1");
+			const song2 = await insertSong(book, "Song2");
+			await insertBookInLibrary(user, book);
+
+			const cookie = await login();
+			const res = request(app).get(`${baseUrl}/list`).set("Cookie", cookie);
+
+			const res_expected = [
+				{
+					owner: user,
+					ownerName: "User123",
+					title: "Book",
+					songs: [
+						{ id: song1, title: "Song1" },
+						{ id: song2, title: "Song2" },
+					],
+				},
+			];
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(200);
+			expect((await res).body).toEqual(res_expected);
+		});
+
+		test("Private, not-owned book, with custom read permission (not in library)", async () => {
+			const user = await insertUser();
+			const otherUser = await insertUser("OtherUser");
+			const book = await insertBook(otherUser, "Book", "Private book", "-");
+			const song1 = await insertSong(book, "Song1");
+			const song2 = await insertSong(book, "Song2");
+			await addCustomBookPermission(user, book, "R");
+
+			const cookie = await login();
+			const res = request(app).get(`${baseUrl}/list`).set("Cookie", cookie);
+
+			const res_expected = [
+				{
+					owner: otherUser,
+					ownerName: "OtherUser",
+					title: "Book",
+					songs: [
+						{ id: song1, title: "Song1" },
+						{ id: song2, title: "Song2" },
+					],
+				},
+			];
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(200);
+			expect((await res).body).toEqual(res_expected);
+		});
+
+		test("Private, not-owned book, with custom read permission (in library)", async () => {
+			const user = await insertUser();
+			const otherUser = await insertUser("OtherUser");
+			const book = await insertBook(otherUser, "Book", "Private book", "-");
+			const song1 = await insertSong(book, "Song1");
+			const song2 = await insertSong(book, "Song2");
+			await addCustomBookPermission(user, book, "R");
+			await insertBookInLibrary(user, book);
+
+			const cookie = await login();
+			const res = request(app).get(`${baseUrl}/list`).set("Cookie", cookie);
+
+			const res_expected = [
+				{
+					owner: otherUser,
+					ownerName: "OtherUser",
+					title: "Book",
+					songs: [
+						{ id: song1, title: "Song1" },
+						{ id: song2, title: "Song2" },
+					],
+				},
+			];
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(200);
+			expect((await res).body).toEqual(res_expected);
+		});
+
+		test("Private, not-owned book, with custom write permission (not in library)", async () => {
+			const user = await insertUser();
+			const otherUser = await insertUser("OtherUser");
+			const book = await insertBook(otherUser, "Book", "Private book", "-");
+			const song1 = await insertSong(book, "Song1");
+			const song2 = await insertSong(book, "Song2");
+			await addCustomBookPermission(user, book, "W");
+
+			const cookie = await login();
+			const res = request(app).get(`${baseUrl}/list`).set("Cookie", cookie);
+
+			const res_expected = [
+				{
+					owner: otherUser,
+					ownerName: "OtherUser",
+					title: "Book",
+					songs: [
+						{ id: song1, title: "Song1" },
+						{ id: song2, title: "Song2" },
+					],
+				},
+			];
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(200);
+			expect((await res).body).toEqual(res_expected);
+		});
+
+		test("Private, not-owned book, with custom write permission (in library)", async () => {
+			const user = await insertUser();
+			const otherUser = await insertUser("OtherUser");
+			const book = await insertBook(otherUser, "Book", "Private book", "-");
+			const song1 = await insertSong(book, "Song1");
+			const song2 = await insertSong(book, "Song2");
+			await addCustomBookPermission(user, book, "W");
+			await insertBookInLibrary(user, book);
+
+			const cookie = await login();
+			const res = request(app).get(`${baseUrl}/list`).set("Cookie", cookie);
+
+			const res_expected = [
+				{
+					owner: otherUser,
+					ownerName: "OtherUser",
+					title: "Book",
+					songs: [
+						{ id: song1, title: "Song1" },
+						{ id: song2, title: "Song2" },
+					],
+				},
+			];
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(200);
+			expect((await res).body).toEqual(res_expected);
+		});
+
+		test("Multiple books", async () => {
+			const user = await insertUser();
+			const otherUser = await insertUser("OtherUser");
+
+			const bookOwn = await insertBook(user, "BookOwn");
+			const songOwn1 = await insertSong(bookOwn, "SongOwn1");
+			const songOwn2 = await insertSong(bookOwn, "SongOwn2");
+
+			const bookRead = await insertBook(otherUser, "BookRead", "", "R");
+			const songRead = await insertSong(bookRead, "SongRead");
+
+			const bookReadLib = await insertBook(otherUser, "BookReadLib", "", "R");
+			const songReadLib = await insertSong(bookReadLib, "SongReadLib");
+			await insertBookInLibrary(user, bookReadLib);
+
+			const bookWrite = await insertBook(otherUser, "BookWrite", "", "W");
+			const songWrite = await insertSong(bookWrite, "SongWrite");
+
+			const bookWriteLib = await insertBook(otherUser, "BookWriteLib", "", "W");
+			const songWriteLib = await insertSong(bookWriteLib, "SongWriteLib");
+			await insertBookInLibrary(user, bookWriteLib);
+
+			const bookCustomRead = await insertBook(otherUser, "BookCustomRead", "", "-");
+			const songCustomRead = await insertSong(bookCustomRead, "SongCustomRead");
+			await addCustomBookPermission(user, bookCustomRead, "R");
+
+			const bookCustomReadLib = await insertBook(otherUser, "BookCustomReadLib", "", "-");
+			const songCustomReadLib = await insertSong(bookCustomReadLib, "SongCustomReadLib");
+			await insertBookInLibrary(user, bookCustomReadLib);
+			await addCustomBookPermission(user, bookCustomReadLib, "R");
+
+			const bookCustomWrite = await insertBook(otherUser, "BookCustomWrite", "", "-");
+			const songCustomWrite = await insertSong(bookCustomWrite, "SongCustomWrite");
+			await addCustomBookPermission(user, bookCustomWrite, "W");
+
+			const bookCustomWriteLib = await insertBook(otherUser, "BookCustomWriteLib", "", "-");
+			const songCustomWriteLib = await insertSong(bookCustomWriteLib, "SongCustomWriteLib");
+			await insertBookInLibrary(user, bookCustomWriteLib);
+			await addCustomBookPermission(user, bookCustomWriteLib, "W");
+
+			const bookNoAccess = await insertBook(otherUser, "BookNoAccess", "", "-");
+			await insertSong(bookNoAccess, "SongNoAccess");
+			await insertBookInLibrary(user, bookNoAccess);
+
+			const bookBanned = await insertBook(otherUser, "BookBanned", "", "R");
+			await insertSong(bookBanned, "SongBanned");
+			await addCustomBookPermission(user, bookBanned, "-");
+
+			const cookie = await login();
+			const res = request(app).get(`${baseUrl}/list`).set("Cookie", cookie);
+
+			const res_expected = [
+				{
+					owner: user,
+					ownerName: "User123",
+					title: "BookOwn",
+					songs: [
+						{ id: songOwn1, title: "SongOwn1" },
+						{ id: songOwn2, title: "SongOwn2" },
+					],
+				},
+				{
+					owner: otherUser,
+					ownerName: "OtherUser",
+					title: "BookRead",
+					songs: [{ id: songRead, title: "SongRead" }],
+				},
+				{
+					owner: otherUser,
+					ownerName: "OtherUser",
+					title: "BookReadLib",
+					songs: [{ id: songReadLib, title: "SongReadLib" }],
+				},
+				{
+					owner: otherUser,
+					ownerName: "OtherUser",
+					title: "BookWrite",
+					songs: [{ id: songWrite, title: "SongWrite" }],
+				},
+				{
+					owner: otherUser,
+					ownerName: "OtherUser",
+					title: "BookWriteLib",
+					songs: [{ id: songWriteLib, title: "SongWriteLib" }],
+				},
+				{
+					owner: otherUser,
+					ownerName: "OtherUser",
+					title: "BookCustomRead",
+					songs: [{ id: songCustomRead, title: "SongCustomRead" }],
+				},
+				{
+					owner: otherUser,
+					ownerName: "OtherUser",
+					title: "BookCustomReadLib",
+					songs: [{ id: songCustomReadLib, title: "SongCustomReadLib" }],
+				},
+				{
+					owner: otherUser,
+					ownerName: "OtherUser",
+					title: "BookCustomWrite",
+					songs: [{ id: songCustomWrite, title: "SongCustomWrite" }],
+				},
+				{
+					owner: otherUser,
+					ownerName: "OtherUser",
+					title: "BookCustomWriteLib",
+					songs: [{ id: songCustomWriteLib, title: "SongCustomWriteLib" }],
+				},
+			];
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(200);
+			expect((await res).body).toEqual(res_expected);
+		});
+
+		test("User not logged in", async () => {
+			await insertUser();
+
+			const res = request(app).get(`${baseUrl}/list`);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(401);
+		});
+	});
+});

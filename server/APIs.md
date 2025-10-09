@@ -185,7 +185,7 @@ Remove a (non-owned) book to the library
     -   user is logged in
 -   Additional Constraints:
     -   return 404 if the user does not have `book` in their library
-	-	return 401 if `book` is owned by the user
+    -   return 401 if `book` is owned by the user
 
 ## Book management
 
@@ -197,12 +197,12 @@ Get basic data about all books the user can access.
 -   Request Body Content: None
 -   Response Body Content:
     -   `b[] books`: the list of books, where `b` is an object with:
-    -   `int owner`: the ID of the user who owns the book
-    -   `str ownerName`: the username of the user who owns the book
-    -   `str title`: the title of the book
-    -   `s[] songs`: the basic data of the songs inside the book, where `s` is an object with:
-        -   `int id`: the song ID
-        -   `str title`: the title of the song
+        -   `int owner`: the ID of the user who owns the book
+        -   `str ownerName`: the username of the user who owns the book
+        -   `str title`: the title of the book
+        -   `s[] songs`: the basic data of the songs inside the book, where `s` is an object with:
+            -   `int id`: the song ID
+            -   `str title`: the title of the song
 -   Access Constraints:
     -   user is logged in
 -   Additional Constraints: None
