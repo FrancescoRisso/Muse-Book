@@ -406,4 +406,165 @@ describe(`Book APIs ("${baseUrl}")`, () => {
 			expect((await res).status).toBe(401);
 		});
 	});
+
+	describe.skip('Get all data about a specific book ("GET /:id")', () => {
+		test("Own book", async () => {
+			const user = await insertUser();
+			const book = await insertBook(user, "Book", "Book description", "-", "<svg></svg>");
+			const song1 = await insertSong(book, "Song1");
+			const song2 = await insertSong(book, "Song2");
+
+			const cookie = await login();
+			const res = request(app).get(`${baseUrl}/${book}`).set("Cookie", cookie);
+
+			const res_expected = {
+				owner: user,
+				ownerName: "User123",
+				canEdit: true,
+				title: "Book",
+				description: "Book description",
+				cover: "<svg></svg>",
+				songs: [song1, song2],
+			};
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(200);
+			expect((await res).body).toEqual(res_expected);
+		});
+
+		test("Public book (with write access)", async () => {
+			const user = await insertUser();
+			const otherUser = await insertUser("OtherUser");
+			const book = await insertBook(otherUser, "Book", "Book description", "W", "<svg></svg>");
+			const song1 = await insertSong(book, "Song1");
+			const song2 = await insertSong(book, "Song2");
+
+			const cookie = await login();
+			const res = request(app).get(`${baseUrl}/${book}`).set("Cookie", cookie);
+
+			const res_expected = {
+				owner: otherUser,
+				ownerName: "OtherUser",
+				canEdit: true,
+				title: "Book",
+				description: "Book description",
+				cover: "<svg></svg>",
+				songs: [song1, song2],
+			};
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(200);
+			expect((await res).body).toEqual(res_expected);
+		});
+
+		test("Public book (with read access)", async () => {
+			const user = await insertUser();
+			const otherUser = await insertUser("OtherUser");
+			const book = await insertBook(otherUser, "Book", "Book description", "R", "<svg></svg>");
+			const song1 = await insertSong(book, "Song1");
+			const song2 = await insertSong(book, "Song2");
+
+			const cookie = await login();
+			const res = request(app).get(`${baseUrl}/${book}`).set("Cookie", cookie);
+
+			const res_expected = {
+				owner: otherUser,
+				ownerName: "OtherUser",
+				canEdit: false,
+				title: "Book",
+				description: "Book description",
+				cover: "<svg></svg>",
+				songs: [song1, song2],
+			};
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(200);
+			expect((await res).body).toEqual(res_expected);
+		});
+
+		test("Private book (with personal write access)", async () => {
+			const user = await insertUser();
+			const otherUser = await insertUser("OtherUser");
+			const book = await insertBook(otherUser, "Book", "Book description", "-", "<svg></svg>");
+			addCustomBookPermission(user, book, "W");
+			const song1 = await insertSong(book, "Song1");
+			const song2 = await insertSong(book, "Song2");
+
+			const cookie = await login();
+			const res = request(app).get(`${baseUrl}/${book}`).set("Cookie", cookie);
+
+			const res_expected = {
+				owner: otherUser,
+				ownerName: "OtherUser",
+				canEdit: true,
+				title: "Book",
+				description: "Book description",
+				cover: "<svg></svg>",
+				songs: [song1, song2],
+			};
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(200);
+			expect((await res).body).toEqual(res_expected);
+		});
+
+		test("Private book (with personal read access)", async () => {
+			const user = await insertUser();
+			const otherUser = await insertUser("OtherUser");
+			const book = await insertBook(otherUser, "Book", "Book description", "-", "<svg></svg>");
+			addCustomBookPermission(user, book, "R");
+			const song1 = await insertSong(book, "Song1");
+			const song2 = await insertSong(book, "Song2");
+
+			const cookie = await login();
+			const res = request(app).get(`${baseUrl}/${book}`).set("Cookie", cookie);
+
+			const res_expected = {
+				owner: otherUser,
+				ownerName: "OtherUser",
+				canEdit: false,
+				title: "Book",
+				description: "Book description",
+				cover: "<svg></svg>",
+				songs: [song1, song2],
+			};
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(200);
+			expect((await res).body).toEqual(res_expected);
+		});
+
+		test("Unaccessible book", async () => {
+			await insertUser();
+			const otherUser = await insertUser("OtherUser");
+			const book = await insertBook(otherUser, "Book", "Book description", "-", "<svg></svg>");
+			await insertSong(book, "Song1");
+			await insertSong(book, "Song2");
+
+			const cookie = await login();
+			const res = request(app).get(`${baseUrl}/${book}`).set("Cookie", cookie);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(403);
+		});
+
+		test("Non existing book", async () => {
+			await insertUser();
+			const cookie = await login();
+			const res = request(app).get(`${baseUrl}/1`).set("Cookie", cookie);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(403);
+		});
+
+		test("Id is not a number", async () => {
+			await insertUser();
+
+			const cookie = await login();
+			const res = request(app).get(`${baseUrl}/book`).set("Cookie", cookie);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(403);
+		});
+	});
 });

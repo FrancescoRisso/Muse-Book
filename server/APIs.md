@@ -225,8 +225,7 @@ Get all data about a specific book.
 -   Access Constraints:
     -   user is logged in
 -   Additional Constraints:
-    -   return 404 if `id` is not an existing book
-    -   return 403 if the user cannot read the book where the song is contained
+    -   return 403 if the user cannot read the book, or the book does not exist
 
 ### POST `musebook/api/books/favorite`
 
