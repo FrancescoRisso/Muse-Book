@@ -588,6 +588,7 @@ describe(`Book APIs ("${baseUrl}")`, () => {
 			await insertBookInLibrary(user, book, false);
 
 			const cookie = await login();
+			const otherSession = await login();
 			const res = request(app).post(`${baseUrl}/favorite`).send({ id: book }).set("Cookie", cookie);
 
 			await expect(res).resolves.toBeDefined();
@@ -596,7 +597,7 @@ describe(`Book APIs ("${baseUrl}")`, () => {
 			const query = "SELECT Favorite FROM USER_HAS_IN_LIBRARY WHERE UserId=? AND BookId=?";
 			const isFavorite = (await query_db(query, [user, book]))[0]["Favorite"];
 			expect(isFavorite).toBeTruthy();
-			expect(await new UpdatesLibrary(cookie).hasUpdate()).toBeTruthy();
+			expect(await new UpdatesLibrary(otherSession).hasUpdate()).toBeTruthy();
 		});
 
 		test("Remove favorite", async () => {
@@ -622,24 +623,26 @@ describe(`Book APIs ("${baseUrl}")`, () => {
 			await insertBookInLibrary(user, book, false);
 
 			const cookie = await login();
+			const otherSession = await login();
 			const res = request(app).post(`${baseUrl}/favorite`).send({ id: "id" }).set("Cookie", cookie);
 
 			await expect(res).resolves.toBeDefined();
 			expect((await res).status).toBe(422);
 
-			expect(await new UpdatesLibrary(cookie).hasUpdate()).toBeFalsy();
+			expect(await new UpdatesLibrary(otherSession).hasUpdate()).toBeFalsy();
 		});
 
 		test("Book does not exist", async () => {
 			await insertUser();
 
 			const cookie = await login();
+			const otherSession = await login();
 			const res = request(app).post(`${baseUrl}/favorite`).send({ id: 1 }).set("Cookie", cookie);
 
 			await expect(res).resolves.toBeDefined();
 			expect((await res).status).toBe(404);
 
-			expect(await new UpdatesLibrary(cookie).hasUpdate()).toBeFalsy();
+			expect(await new UpdatesLibrary(otherSession).hasUpdate()).toBeFalsy();
 		});
 
 		test("Book not in library", async () => {
@@ -648,14 +651,15 @@ describe(`Book APIs ("${baseUrl}")`, () => {
 			const book = await insertBook(otherUser);
 
 			const cookie = await login();
+			const otherSession = await login();
 			const res = request(app).post(`${baseUrl}/favorite`).send({ id: book }).set("Cookie", cookie);
 
 			await expect(res).resolves.toBeDefined();
 			expect((await res).status).toBe(404);
-			
-			expect(await new UpdatesLibrary(cookie).hasUpdate()).toBeFalsy();
+
+			expect(await new UpdatesLibrary(otherSession).hasUpdate()).toBeFalsy();
 		});
-		
+
 		test("User not logged in", async () => {
 			const user = await insertUser();
 			const book = await insertBook(user);

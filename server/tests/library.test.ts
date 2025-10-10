@@ -128,6 +128,7 @@ describe(`Library APIs ("${baseUrl}")`, () => {
 			const book = await insertBook(otherUser);
 
 			const cookie = await login();
+			const otherSession = await login();
 			const res = request(app).post(baseUrl).send({ book }).set("Cookie", cookie);
 
 			await expect(res).resolves.toBeDefined();
@@ -137,7 +138,7 @@ describe(`Library APIs ("${baseUrl}")`, () => {
 			const booksInLibrary = (await query_db(query, [user]))[0]["COUNT(*)"];
 			expect(booksInLibrary).toBe(1);
 
-			expect(await new UpdatesLibrary(cookie).hasUpdate()).toBeTruthy();
+			expect(await new UpdatesLibrary(otherSession).hasUpdate()).toBeTruthy();
 		});
 		test("Success (book is publicly writable)", async () => {
 			const user = await insertUser();
@@ -145,6 +146,7 @@ describe(`Library APIs ("${baseUrl}")`, () => {
 			const book = await insertBook(otherUser, "Book", "Everyone can edit", "W");
 
 			const cookie = await login();
+			const otherSession = await login();
 			const res = request(app).post(baseUrl).send({ book }).set("Cookie", cookie);
 
 			await expect(res).resolves.toBeDefined();
@@ -154,7 +156,7 @@ describe(`Library APIs ("${baseUrl}")`, () => {
 			const booksInLibrary = (await query_db(query, [user]))[0]["COUNT(*)"];
 			expect(booksInLibrary).toBe(1);
 
-			expect(await new UpdatesLibrary(cookie).hasUpdate()).toBeTruthy();
+			expect(await new UpdatesLibrary(otherSession).hasUpdate()).toBeTruthy();
 		});
 
 		test("Success (another book already in library)", async () => {
@@ -165,6 +167,7 @@ describe(`Library APIs ("${baseUrl}")`, () => {
 			await insertBookInLibrary(user, book2, true);
 
 			const cookie = await login();
+			const otherSession = await login();
 			const res = request(app).post(baseUrl).send({ book1 }).set("Cookie", cookie);
 
 			await expect(res).resolves.toBeDefined();
@@ -174,7 +177,7 @@ describe(`Library APIs ("${baseUrl}")`, () => {
 			const booksInLibrary = (await query_db(query, [user]))[0]["COUNT(*)"];
 			expect(booksInLibrary).toBe(2);
 
-			expect(await new UpdatesLibrary(cookie).hasUpdate()).toBeTruthy();
+			expect(await new UpdatesLibrary(otherSession).hasUpdate()).toBeTruthy();
 		});
 
 		test("Book already in library (do nothing)", async () => {
@@ -184,6 +187,7 @@ describe(`Library APIs ("${baseUrl}")`, () => {
 			await insertBookInLibrary(user, book, true);
 
 			const cookie = await login();
+			const otherSession = await login();
 			const res = request(app).post(baseUrl).send({ book }).set("Cookie", cookie);
 
 			await expect(res).resolves.toBeDefined();
@@ -193,7 +197,7 @@ describe(`Library APIs ("${baseUrl}")`, () => {
 			const booksInLibrary = (await query_db(query, [user]))[0]["COUNT(*)"];
 			expect(booksInLibrary).toBe(1);
 
-			expect(await new UpdatesLibrary(cookie).hasUpdate()).toBeFalsy();
+			expect(await new UpdatesLibrary(otherSession).hasUpdate()).toBeFalsy();
 		});
 
 		test("Own book (do nothing)", async () => {
@@ -202,6 +206,7 @@ describe(`Library APIs ("${baseUrl}")`, () => {
 			await insertBookInLibrary(user, book, true);
 
 			const cookie = await login();
+			const otherSession = await login();
 			const res = request(app).post(baseUrl).send({ book }).set("Cookie", cookie);
 
 			await expect(res).resolves.toBeDefined();
@@ -211,7 +216,7 @@ describe(`Library APIs ("${baseUrl}")`, () => {
 			const booksInLibrary = (await query_db(query, [user]))[0]["COUNT(*)"];
 			expect(booksInLibrary).toBe(1);
 
-			expect(await new UpdatesLibrary(cookie).hasUpdate()).toBeFalsy();
+			expect(await new UpdatesLibrary(otherSession).hasUpdate()).toBeFalsy();
 		});
 
 		test("Not logged in", async () => {
@@ -232,6 +237,7 @@ describe(`Library APIs ("${baseUrl}")`, () => {
 			const user = await insertUser();
 
 			const cookie = await login();
+			const otherSession = await login();
 			const res = request(app).post(baseUrl).send({ book: "book" }).set("Cookie", cookie);
 
 			await expect(res).resolves.toBeDefined();
@@ -241,13 +247,14 @@ describe(`Library APIs ("${baseUrl}")`, () => {
 			const booksInLibrary = (await query_db(query, [user]))[0]["COUNT(*)"];
 			expect(booksInLibrary).toBe(0);
 
-			expect(await new UpdatesLibrary(cookie).hasUpdate()).toBeFalsy();
+			expect(await new UpdatesLibrary(otherSession).hasUpdate()).toBeFalsy();
 		});
 
 		test("Book does not exist", async () => {
 			const user = await insertUser();
 
 			const cookie = await login();
+			const otherSession = await login();
 			const res = request(app).post(baseUrl).send({ book: 0 }).set("Cookie", cookie);
 
 			await expect(res).resolves.toBeDefined();
@@ -257,7 +264,7 @@ describe(`Library APIs ("${baseUrl}")`, () => {
 			const booksInLibrary = (await query_db(query, [user]))[0]["COUNT(*)"];
 			expect(booksInLibrary).toBe(0);
 
-			expect(await new UpdatesLibrary(cookie).hasUpdate()).toBeFalsy();
+			expect(await new UpdatesLibrary(otherSession).hasUpdate()).toBeFalsy();
 		});
 
 		test("Book is not publicly accessible", async () => {
@@ -266,6 +273,7 @@ describe(`Library APIs ("${baseUrl}")`, () => {
 			const book = await insertBook(otherUser, "Book", "Private book", "-", "");
 
 			const cookie = await login();
+			const otherSession = await login();
 			const res = request(app).post(baseUrl).send({ book }).set("Cookie", cookie);
 
 			await expect(res).resolves.toBeDefined();
@@ -275,7 +283,7 @@ describe(`Library APIs ("${baseUrl}")`, () => {
 			const booksInLibrary = (await query_db(query, [user]))[0]["COUNT(*)"];
 			expect(booksInLibrary).toBe(0);
 
-			expect(await new UpdatesLibrary(cookie).hasUpdate()).toBeFalsy();
+			expect(await new UpdatesLibrary(otherSession).hasUpdate()).toBeFalsy();
 		});
 
 		test("Book is not publicly accessible, but user has custom permissions to read it", async () => {
@@ -285,6 +293,7 @@ describe(`Library APIs ("${baseUrl}")`, () => {
 			await addCustomBookPermission(user, book, "R");
 
 			const cookie = await login();
+			const otherSession = await login();
 			const res = request(app).post(baseUrl).send({ book }).set("Cookie", cookie);
 
 			await expect(res).resolves.toBeDefined();
@@ -294,7 +303,7 @@ describe(`Library APIs ("${baseUrl}")`, () => {
 			const booksInLibrary = (await query_db(query, [user]))[0]["COUNT(*)"];
 			expect(booksInLibrary).toBe(1);
 
-			expect(await new UpdatesLibrary(cookie).hasUpdate()).toBeTruthy();
+			expect(await new UpdatesLibrary(otherSession).hasUpdate()).toBeTruthy();
 		});
 
 		test("Book is not publicly accessible, but user has custom permissions to write it", async () => {
@@ -304,6 +313,7 @@ describe(`Library APIs ("${baseUrl}")`, () => {
 			await addCustomBookPermission(user, book, "W");
 
 			const cookie = await login();
+			const otherSession = await login();
 			const res = request(app).post(baseUrl).send({ book }).set("Cookie", cookie);
 
 			await expect(res).resolves.toBeDefined();
@@ -313,7 +323,7 @@ describe(`Library APIs ("${baseUrl}")`, () => {
 			const booksInLibrary = (await query_db(query, [user]))[0]["COUNT(*)"];
 			expect(booksInLibrary).toBe(1);
 
-			expect(await new UpdatesLibrary(cookie).hasUpdate()).toBeTruthy();
+			expect(await new UpdatesLibrary(otherSession).hasUpdate()).toBeTruthy();
 		});
 
 		test("Book is publicly accessible, but user is banned from it", async () => {
@@ -323,6 +333,7 @@ describe(`Library APIs ("${baseUrl}")`, () => {
 			await addCustomBookPermission(user, book, "-");
 
 			const cookie = await login();
+			const otherSession = await login();
 			const res = request(app).post(baseUrl).send({ book }).set("Cookie", cookie);
 
 			await expect(res).resolves.toBeDefined();
@@ -332,7 +343,7 @@ describe(`Library APIs ("${baseUrl}")`, () => {
 			const booksInLibrary = (await query_db(query, [user]))[0]["COUNT(*)"];
 			expect(booksInLibrary).toBe(0);
 
-			expect(await new UpdatesLibrary(cookie).hasUpdate()).toBeFalsy();
+			expect(await new UpdatesLibrary(otherSession).hasUpdate()).toBeFalsy();
 		});
 	});
 
@@ -344,6 +355,7 @@ describe(`Library APIs ("${baseUrl}")`, () => {
 			await insertBookInLibrary(user, book);
 
 			const cookie = await login();
+			const otherSession = await login();
 			const res = request(app).delete(baseUrl).send({ book }).set("Cookie", cookie);
 
 			await expect(res).resolves.toBeDefined();
@@ -353,7 +365,7 @@ describe(`Library APIs ("${baseUrl}")`, () => {
 			const booksInLibrary = (await query_db(query, [user]))[0]["COUNT(*)"];
 			expect(booksInLibrary).toBe(0);
 
-			expect(await new UpdatesLibrary(cookie).hasUpdate()).toBeTruthy();
+			expect(await new UpdatesLibrary(otherSession).hasUpdate()).toBeTruthy();
 		});
 
 		test("Book is not a number", async () => {
@@ -363,6 +375,7 @@ describe(`Library APIs ("${baseUrl}")`, () => {
 			await insertBookInLibrary(user, book);
 
 			const cookie = await login();
+			const otherSession = await login();
 			const res = request(app).delete(baseUrl).send({ book: "book" }).set("Cookie", cookie);
 
 			await expect(res).resolves.toBeDefined();
@@ -372,7 +385,7 @@ describe(`Library APIs ("${baseUrl}")`, () => {
 			const booksInLibrary = (await query_db(query, [user]))[0]["COUNT(*)"];
 			expect(booksInLibrary).toBe(1);
 
-			expect(await new UpdatesLibrary(cookie).hasUpdate()).toBeFalsy();
+			expect(await new UpdatesLibrary(otherSession).hasUpdate()).toBeFalsy();
 		});
 
 		test("The user does not have the book in its library", async () => {
@@ -381,6 +394,7 @@ describe(`Library APIs ("${baseUrl}")`, () => {
 			const book = await insertBook(otherUser);
 
 			const cookie = await login();
+			const otherSession = await login();
 			const res = request(app).delete(baseUrl).send({ book }).set("Cookie", cookie);
 
 			await expect(res).resolves.toBeDefined();
@@ -390,7 +404,7 @@ describe(`Library APIs ("${baseUrl}")`, () => {
 			const booksInLibrary = (await query_db(query, [user]))[0]["COUNT(*)"];
 			expect(booksInLibrary).toBe(0);
 
-			expect(await new UpdatesLibrary(cookie).hasUpdate()).toBeFalsy();
+			expect(await new UpdatesLibrary(otherSession).hasUpdate()).toBeFalsy();
 		});
 
 		test("The user owns the book", async () => {
@@ -399,6 +413,7 @@ describe(`Library APIs ("${baseUrl}")`, () => {
 			await insertBookInLibrary(user, book);
 
 			const cookie = await login();
+			const otherSession = await login();
 			const res = request(app).delete(baseUrl).send({ book }).set("Cookie", cookie);
 
 			await expect(res).resolves.toBeDefined();
@@ -408,7 +423,7 @@ describe(`Library APIs ("${baseUrl}")`, () => {
 			const booksInLibrary = (await query_db(query, [user]))[0]["COUNT(*)"];
 			expect(booksInLibrary).toBe(1);
 
-			expect(await new UpdatesLibrary(cookie).hasUpdate()).toBeFalsy();
+			expect(await new UpdatesLibrary(otherSession).hasUpdate()).toBeFalsy();
 		});
 
 		test("User not logged in", async () => {
