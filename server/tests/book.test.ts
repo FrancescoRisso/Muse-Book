@@ -671,4 +671,110 @@ describe(`Book APIs ("${baseUrl}")`, () => {
 			expect((await res).status).toBe(401);
 		});
 	});
+
+	describe.skip('Delete own book ("DELETE /:id")', () => {
+		test("Successful (book only in that library)", async () => {
+			const user = await insertUser();
+			const book = await insertBook(user);
+			await insertBookInLibrary(user, book);
+
+			const cookie = await login();
+			const res = request(app).delete(`${baseUrl}/${book}`).set("Cookie", cookie);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(200);
+
+			const query = "SELECT COUNT(*) FROM BOOK WHERE Id=?";
+			const existingBook = (await query_db(query, [book]))[0]["COUNT(*)"];
+			expect(existingBook).toBeFalsy();
+
+			const query2 = "SELECT COUNT(*) FROM USER_HAS_IN_LIBRARY WHERE UserId=? AND BookId=?";
+			const existingInLibrary = (await query_db(query2, [user, book]))[0]["COUNT(*)"];
+			expect(existingInLibrary).toBeFalsy();
+		});
+
+		test("Successful (same book appears in another session library)", async () => {
+			const user = await insertUser();
+			const book = await insertBook(user);
+			await insertBookInLibrary(user, book);
+
+			const cookie = await login();
+			const otherSession = await login();
+			const res = request(app).delete(`${baseUrl}/${book}`).set("Cookie", cookie);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(200);
+
+			expect(await new UpdatesLibrary(otherSession).hasUpdate()).toBeTruthy();
+		});
+
+		test("Successful (same book appears in another user library)", async () => {
+			const user = await insertUser();
+			const otherUser = await insertUser("OtherUser");
+			const book = await insertBook(user);
+			await insertBookInLibrary(user, book);
+			await insertBookInLibrary(otherUser, book);
+
+			const cookie = await login();
+			const otherSession = await login("OtherUser");
+			const res = request(app).delete(`${baseUrl}/${book}`).set("Cookie", cookie);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(200);
+
+			const query = "SELECT COUNT(*) FROM USER_HAS_IN_LIBRARY WHERE UserId=? AND BookId=?";
+			const existing = (await query_db(query, [otherUser, book]))[0]["COUNT(*)"];
+			expect(existing).toBeFalsy();
+
+			expect(await new UpdatesLibrary(otherSession).hasUpdate()).toBeTruthy();
+		});
+
+		test("Id not a number", async () => {
+			const user = await insertUser();
+			const book = await insertBook(user);
+			await insertBookInLibrary(user, book);
+
+			const cookie = await login();
+			const res = request(app).delete(`${baseUrl}/book`).set("Cookie", cookie);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(422);
+		});
+
+		test("Book not owned", async () => {
+			const user = await insertUser();
+			const otherUser = await insertUser("OtherUser");
+			const book = await insertBook(otherUser);
+			await insertBookInLibrary(user, book);
+
+			const cookie = await login();
+			const res = request(app).delete(`${baseUrl}/${book}`).set("Cookie", cookie);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(404);
+
+			const query = "SELECT COUNT(*) FROM BOOK WHERE Id=?";
+			const existing = (await query_db(query, [book]))[0]["COUNT(*)"];
+			expect(existing).toBeTruthy();
+		});
+
+		test("Book not existing", async () => {
+			await insertUser();
+
+			const cookie = await login();
+			const res = request(app).delete(`${baseUrl}/1`).set("Cookie", cookie);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(404);
+		});
+
+		test("User not logged in", async () => {
+			await insertUser();
+
+			const res = request(app).delete(`${baseUrl}/1`);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(401);
+		});
+	});
 });

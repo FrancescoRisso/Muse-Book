@@ -251,8 +251,7 @@ Delete a book.
 -   Access Constraints:
     -   user is logged in
 -   Additional Constraints:
-    -   return 404 if `id` is not an existing book
-    -   return 404 if the user is not the owner of the book
+    -   return 404 if `id` is not an existing book owned by the user
 
 ### POST `musebook/api/book`
 

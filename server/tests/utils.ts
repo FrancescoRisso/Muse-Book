@@ -113,11 +113,11 @@ export const addCustomBookPermission = async (user: number, book: number, perm: 
 	});
 };
 
-export const login = async (): Promise<string> => {
+export const login = async (username = "User123", password = "pwd"): Promise<string> => {
 	return new Promise<string>((resolve, reject) => {
 		request(app)
 			.post(`/ezelectronics/sessions`)
-			.send({ username: "User123", password: "pwd" })
+			.send({ username, password })
 			.expect(200)
 			.end((err, res) => {
 				if (err) reject(err);
