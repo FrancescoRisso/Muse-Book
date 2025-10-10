@@ -8,8 +8,10 @@ import {
 	insertSong,
 	insertUser,
 	login,
+	query_db,
 } from "./utils";
 import { app } from "../index";
+import { UpdatesLibrary } from "./update_tables_utils";
 
 beforeEach(clearDB);
 
@@ -565,6 +567,104 @@ describe(`Book APIs ("${baseUrl}")`, () => {
 
 			await expect(res).resolves.toBeDefined();
 			expect((await res).status).toBe(403);
+		});
+
+		test("User not logged in", async () => {
+			const user = await insertUser();
+			const book = await insertBook(user);
+			insertBookInLibrary(user, book);
+
+			const res = request(app).get(`${baseUrl}/${book}`);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(401);
+		});
+	});
+
+	describe.skip('Toggle favorite flag from book ("POST /favorite")', () => {
+		test("Add favorite", async () => {
+			const user = await insertUser();
+			const book = await insertBook(user);
+			await insertBookInLibrary(user, book, false);
+
+			const cookie = await login();
+			const res = request(app).post(`${baseUrl}/favorite`).send({ id: book }).set("Cookie", cookie);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(200);
+
+			const query = "SELECT Favorite FROM USER_HAS_IN_LIBRARY WHERE UserId=? AND BookId=?";
+			const isFavorite = (await query_db(query, [user, book]))[0]["Favorite"];
+			expect(isFavorite).toBeTruthy();
+			expect(await new UpdatesLibrary(cookie).hasUpdate()).toBeTruthy();
+		});
+
+		test("Remove favorite", async () => {
+			const user = await insertUser();
+			const book = await insertBook(user);
+			await insertBookInLibrary(user, book, true);
+
+			const cookie = await login();
+			const res = request(app).post(`${baseUrl}/favorite`).send({ id: book }).set("Cookie", cookie);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(200);
+
+			const query = "SELECT Favorite FROM USER_HAS_IN_LIBRARY WHERE UserId=? AND BookId=?";
+			const isFavorite = (await query_db(query, [user, book]))[0]["Favorite"];
+			expect(isFavorite).toBeFalsy();
+			expect(await new UpdatesLibrary(cookie).hasUpdate()).toBeTruthy();
+		});
+
+		test("Id not a number", async () => {
+			const user = await insertUser();
+			const book = await insertBook(user);
+			await insertBookInLibrary(user, book, false);
+
+			const cookie = await login();
+			const res = request(app).post(`${baseUrl}/favorite`).send({ id: "id" }).set("Cookie", cookie);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(422);
+
+			expect(await new UpdatesLibrary(cookie).hasUpdate()).toBeFalsy();
+		});
+
+		test("Book does not exist", async () => {
+			await insertUser();
+
+			const cookie = await login();
+			const res = request(app).post(`${baseUrl}/favorite`).send({ id: 1 }).set("Cookie", cookie);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(404);
+
+			expect(await new UpdatesLibrary(cookie).hasUpdate()).toBeFalsy();
+		});
+
+		test("Book not in library", async () => {
+			await insertUser();
+			const otherUser = await insertUser("OtherUser");
+			const book = await insertBook(otherUser);
+
+			const cookie = await login();
+			const res = request(app).post(`${baseUrl}/favorite`).send({ id: book }).set("Cookie", cookie);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(404);
+			
+			expect(await new UpdatesLibrary(cookie).hasUpdate()).toBeFalsy();
+		});
+		
+		test("User not logged in", async () => {
+			const user = await insertUser();
+			const book = await insertBook(user);
+			await insertBookInLibrary(user, book, false);
+
+			const res = request(app).post(`${baseUrl}/favorite`).send({ id: book });
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(401);
 		});
 	});
 });

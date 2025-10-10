@@ -238,8 +238,7 @@ Add or remove the favorite flag from a book.
 -   Access Constraints:
     -   user is logged in
 -   Additional Constraints:
-    -   return 404 if `id` is not an existing book
-    -   return 404 if `id` is not in the user's library
+    -   return 404 if `id` is not an existing book in the user's library
 
 ### DELETE `musebook/api/book/:id`
 
