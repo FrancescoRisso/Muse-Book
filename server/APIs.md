@@ -261,15 +261,15 @@ Create a new book.
 -   Request Body Content:
     -   `title`: a string that cannot be empty
     -   `description`: a string
-    -   `cover`: an image
-    -   `general_permission`: null, or a string that is either "R" or "W"
-    -   `custom_permissions`: an array of objects that contain:
+    -   `cover`: a string containing an svg image
+    -   `generalPermission`: a string that is either "R", "W" or "-"
+    -   `customPermissions`: an array of objects that contain:
         -   `user`: a number
-        -   `permission`: null, or a string that is either "R" or "W"
+        -   `permission`: a string that is either "R", "W" or "-"
 -   Response Body Content:
     -   `int id`: the Id of the new book
 -   Access Constraints:
-    -   user is logged
+    -   user is logged in
 -   Additional Constraints:
     -   return 404 if any of the `custom_permissions.user` is not a valid user
 
@@ -283,7 +283,7 @@ Edit data of a new book.
     -   `title`: a string that cannot be empty
     -   `description`: a string
     -   `cover`: an image
-    -   `general_permission`: null, or a string that is either "R" or "W"
+    -   `generalPermission`: a string that is either "R", "W" or "-"
 -   Response Body Content:
     -   `int id`: the Id of the new book
 -   Access Constraints:
@@ -301,7 +301,7 @@ Add a custom permission to a book.
 -   Request Body Content:
     -   `book`: a number
     -   `user`: a number
-    -   `permission`: null, or a string that is either "R" or "W"
+    -   `permission`: a string that is either "R", "W" or "-"
 -   Response Body Content: None
 -   Access Constraints:
     -   user is logged in

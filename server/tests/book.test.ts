@@ -777,4 +777,295 @@ describe(`Book APIs ("${baseUrl}")`, () => {
 			expect((await res).status).toBe(401);
 		});
 	});
+
+	describe('Create a new book ("POST /")', () => {
+		test("Book inserted in database and in owner's library", async () => {
+			const user = await insertUser();
+
+			const book = {
+				title: "Book",
+				description: "A book",
+				cover: "<svg></svg>",
+				generalPermission: "R",
+				customPermissions: [] as object[],
+			};
+
+			const cookie = await login();
+			const res = request(app).post(`${baseUrl}`).send(book).set("Cookie", cookie);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(200);
+			const id = (await res).body;
+
+			const query = "SELECT COUNT(*) FROM BOOK WHERE Id=?";
+			const existingBook = (await query_db(query, [id]))[0]["COUNT(*)"];
+			expect(existingBook).toBeTruthy();
+
+			const query2 = "SELECT Favorite FROM USER_HAS_IN_LIBRARY WHERE UserId=? AND BookId=?";
+			const favorite = await query_db(query2, [user, book]);
+			expect(favorite.length).toBe(1);
+			expect(favorite[0]["Favorite"]).toBeFalsy();
+		});
+
+		test("Other sessions get updated", async () => {
+			await insertUser();
+
+			const book = {
+				title: "Book",
+				description: "A book",
+				cover: "<svg></svg>",
+				generalPermission: "R",
+				customPermissions: [] as object[],
+			};
+
+			const cookie = await login();
+			const otherSession = await login();
+			const res = request(app).post(`${baseUrl}`).send(book).set("Cookie", cookie);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(200);
+
+			expect(await new UpdatesLibrary(otherSession).hasUpdate()).toBeTruthy();
+		});
+
+		test("Custom permissions for private book", async () => {
+			const user = await insertUser();
+			const user1 = await insertUser("User1");
+			const user2 = await insertUser("User2");
+			const user3 = await insertUser("User3");
+
+			const book = {
+				title: "Book",
+				description: "A book",
+				cover: "<svg></svg>",
+				generalPermission: "-",
+				customPermissions: [
+					{ user: user1, permission: "R" },
+					{ user: user2, permission: "W" },
+					{ user: user3, permission: "-" },
+				],
+			};
+
+			const cookie = await login();
+			const res = request(app).post(`${baseUrl}`).send(book).set("Cookie", cookie);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(200);
+			const id = (await res).body;
+
+			const query = "SELECT UserId, Permission FROM BOOK_CUSTOM_PERMISSION WHERE BookId=?";
+			const customPermissions = await query_db(query, [id]);
+			expect(customPermissions.length).toBe(3);
+			expect(customPermissions).toContainEqual({ UserId: user1, Permission: "R" });
+			expect(customPermissions).toContainEqual({ UserId: user2, Permission: "W" });
+			expect(customPermissions).toContainEqual({ UserId: user3, Permission: "-" });
+		});
+
+		const checkNoBookExists = async () => {
+			const query = "SELECT COUNT(*) FROM BOOK";
+			const customPermissions = (await query_db(query, []))[0]["COUNT(*)"];
+			expect(customPermissions).toBe(0);
+		};
+
+		test("Empty title", async () => {
+			await insertUser();
+
+			const book = {
+				title: "",
+				description: "A book",
+				cover: "<svg></svg>",
+				generalPermission: "-",
+				customPermissions: [] as object[],
+			};
+
+			const cookie = await login();
+			const res = request(app).post(`${baseUrl}`).send(book).set("Cookie", cookie);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(422);
+
+			await checkNoBookExists();
+		});
+
+		test("Missing title", async () => {
+			await insertUser();
+
+			const book = {
+				description: "A book",
+				cover: "<svg></svg>",
+				generalPermission: "-",
+				customPermissions: [] as object[],
+			};
+
+			const cookie = await login();
+			const res = request(app).post(`${baseUrl}`).send(book).set("Cookie", cookie);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(422);
+
+			await checkNoBookExists();
+		});
+
+		test("Missing description", async () => {
+			await insertUser();
+
+			const book = {
+				title: "Book",
+				cover: "<svg></svg>",
+				generalPermission: "-",
+				customPermissions: [] as object[],
+			};
+
+			const cookie = await login();
+			const res = request(app).post(`${baseUrl}`).send(book).set("Cookie", cookie);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(422);
+
+			await checkNoBookExists();
+		});
+
+		test("Missing cover", async () => {
+			await insertUser();
+
+			const book = {
+				title: "Book",
+				description: "A book",
+				generalPermission: "-",
+				customPermissions: [] as object[],
+			};
+
+			const cookie = await login();
+			const res = request(app).post(`${baseUrl}`).send(book).set("Cookie", cookie);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(422);
+
+			await checkNoBookExists();
+		});
+
+		test("Missing generalPermission", async () => {
+			await insertUser();
+
+			const book = {
+				title: "Book",
+				description: "A book",
+				cover: "<svg></svg>",
+				customPermissions: [] as object[],
+			};
+
+			const cookie = await login();
+			const res = request(app).post(`${baseUrl}`).send(book).set("Cookie", cookie);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(422);
+
+			await checkNoBookExists();
+		});
+
+		test("Invalid generalPermission", async () => {
+			await insertUser();
+
+			const book = {
+				title: "Book",
+				description: "A book",
+				cover: "<svg></svg>",
+				generalPermission: "A",
+				customPermissions: [] as object[],
+			};
+
+			const cookie = await login();
+			const res = request(app).post(`${baseUrl}`).send(book).set("Cookie", cookie);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(422);
+
+			await checkNoBookExists();
+		});
+
+		test("Invalid user in customPermission", async () => {
+			const user = await insertUser();
+
+			const book = {
+				title: "Book",
+				description: "A book",
+				cover: "<svg></svg>",
+				generalPermission: "R",
+				customPermissions: [{ user: user + 1, permission: "R" }],
+			};
+
+			const cookie = await login();
+			const res = request(app).post(`${baseUrl}`).send(book).set("Cookie", cookie);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(404);
+
+			await checkNoBookExists();
+		});
+
+		test("Invalid permission in customPermission", async () => {
+			await insertUser();
+			const otherUser = await insertUser("OtherUser");
+
+			const book = {
+				title: "Book",
+				description: "A book",
+				cover: "<svg></svg>",
+				generalPermission: "R",
+				customPermissions: [{ user: otherUser, permission: "A" }],
+			};
+
+			const cookie = await login();
+			const res = request(app).post(`${baseUrl}`).send(book).set("Cookie", cookie);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(422);
+
+			await checkNoBookExists();
+		});
+
+		test("Invalid permission in customPermission (with a correct one)", async () => {
+			await insertUser();
+			const otherUser1 = await insertUser("OtherUser1");
+			const otherUser2 = await insertUser("OtherUser2");
+
+			const book = {
+				title: "Book",
+				description: "A book",
+				cover: "<svg></svg>",
+				generalPermission: "R",
+				customPermissions: [
+					{ user: otherUser1, permission: "-" },
+					{ user: otherUser2, permission: "A" },
+				],
+			};
+
+			const cookie = await login();
+			const res = request(app).post(`${baseUrl}`).send(book).set("Cookie", cookie);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(422);
+
+			await checkNoBookExists();
+		});
+
+		test("User is not logged in", async () => {
+			await insertUser();
+
+			const book = {
+				title: "Book",
+				description: "A book",
+				cover: "<svg></svg>",
+				generalPermission: "R",
+				customPermissions: [] as object[],
+			};
+
+			const res = request(app).post(`${baseUrl}`).send(book);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(401);
+
+			await checkNoBookExists();
+		});
+	});
 });
