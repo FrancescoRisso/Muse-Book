@@ -274,6 +274,71 @@ describe.skip(`User APIs ("${baseUrl}")`, () => {
 		});
 	});
 
+	describe.skip('Get users with username matching ("GET /:partname")', () => {
+		test("No user matching", async () => {
+			await insertUser("User");
+			await insertUser("Test");
+
+			const cookie = await login("User");
+			const res = request(app).get(`${baseUrl}/Prova`).set("Cookie", cookie);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(200);
+			expect((await res).body).toEqual([]);
+		});
+
+		test("Multiple users matching (different cases)", async () => {
+			await insertUser("User");
+			const LongUsername = await insertUser("LongUsername");
+			const Metaphor = await insertUser("Metaphor");
+			const MusicMelody = await insertUser("MusicMelody");
+			await insertUser("NoMatch");
+
+			const cookie = await login("User");
+			const res = request(app).get(`${baseUrl}/me`).set("Cookie", cookie);
+
+			const expected = [
+				{ id: LongUsername, username: "LongUsername" },
+				{ id: Metaphor, username: "Metaphor" },
+				{ id: MusicMelody, username: "MusicMelody" },
+			];
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(200);
+			expected.forEach(async (user) => expect((await res).body).toContainEqual(user));
+		});
+
+		test("Avoid self match", async () => {
+			await insertUser("User");
+
+			const cookie = await login("User");
+			const res = request(app).get(`${baseUrl}/User`).set("Cookie", cookie);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(200);
+			expect((await res).body).toEqual([]);
+		});
+
+		test("Empty name", async () => {
+			await insertUser("User");
+
+			const cookie = await login("User");
+			const res = request(app).get(`${baseUrl}/`).set("Cookie", cookie);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(422);
+		});
+
+		test("User is not logged in", async () => {
+			await insertUser();
+
+			const res = request(app).get(`${baseUrl}/users`);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(401);
+		});
+	});
+
 	describe.skip('Delete user ("DELETE /")', () => {
 		test("Successful", async () => {
 			await insertUser();

@@ -88,6 +88,21 @@ Register a new user.
 -   Additional Constraints:
     -   returns 409 if the username is already taken
 
+### GET `musebook/api/user/:partname`
+
+Get the list of users whose username contains a specific string (ignoring casing).
+
+-   Request Parameters:
+	- `partname`: a string that cannot be empty
+-   Request Body Content: None
+-   Response Body Content: 
+	- `u[] users`: the list of users with username matching `partname`, where `u` is an object with:
+		- `int id`: the ID of the user
+		- `str username`: the full username of the user
+-   Access Constraints:
+	- user is logged in
+-   Additional Constraints: None
+
 ### DELETE `musebook/api/user`
 
 Deletes a user.
