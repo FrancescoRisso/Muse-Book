@@ -300,7 +300,7 @@ Add a custom permission to a book.
 -   Request Body Content:
     -   `book`: a number
     -   `user`: a number
-    -   `permission`: a string that is either "R", "W" or "-"
+    -   `permission`: a string that is either "R", "W", "-" or "Default" (Default removes the custom permission, leaving the general one active)
 -   Response Body Content: None
 -   Access Constraints:
     -   user is logged in
@@ -324,6 +324,7 @@ Create a book transfer proposal.
     -   return 404 if `book` is not a valid book
     -   return 401 if the user is not the owner of the book
     -   return 404 if `user` is not a valid user
+    -   return 403 if `user` is the same user making the request
 
 ### DELETE `musebook/api/book/transfer/:id`
 

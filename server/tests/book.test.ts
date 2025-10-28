@@ -11,7 +11,7 @@ import {
 	query_db,
 } from "./utils";
 import { app } from "../index";
-import { UpdatesBookInfo, UpdatesLibrary } from "./update_tables_utils";
+import { UpdatesBookInfo, UpdatesCustomPermission, UpdatesLibrary } from "./update_tables_utils";
 
 beforeEach(clearDB);
 
@@ -1375,6 +1375,215 @@ describe(`Book APIs ("${baseUrl}")`, () => {
 			const query = "SELECT Title FROM BOOK WHERE Id=?";
 			const details = (await query_db(query, [book]))[0];
 			expect(details["Title"]).toBe("Book");
+		});
+
+		test("Change permissions removes book from other", async () => {
+			const user = await insertUser();
+			const otherUser = await insertUser("OtherUser");
+			const book = await insertBook(user, "Book", "A book", "R", "<svg></svg>");
+
+			await insertBookInLibrary(otherUser, book);
+
+			const newDetails = {
+				id: book,
+				generalPermission: "-",
+			};
+
+			const cookie = await login();
+			const otherUserSession = await login("OtherUser");
+			const res = request(app).patch(`${baseUrl}`).send(newDetails).set("Cookie", cookie);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(200);
+
+			const query = "SELECT COUNT(*) FROM USER_HAS_IN_LIBRARY WHERE UserId=?";
+			const numBooks = (await query_db(query, [otherUser]))[0]["COUNT(*)"];
+			expect(numBooks).toBe(0);
+
+			expect(await new UpdatesLibrary(otherUserSession).hasUpdate()).toBeTruthy();
+		});
+
+		test("User is not logged in", async () => {
+			const user = await insertUser();
+			const book = await insertBook(user, "Book", "A book", "-", "<svg></svg>");
+
+			const newDetails = { id: book, title: "Updated book" };
+
+			const res = request(app).patch(`${baseUrl}`).send(newDetails);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(401);
+		});
+	});
+
+	describe.skip('Change custom permissions of a book ("PATCH /custom-permissions")', () => {
+		test("Add permission", async () => {
+			const user = await insertUser();
+			const otherUser = await insertUser("OtherUser");
+			const book = await insertBook(user, "Book", "A book", "-", "<svg></svg>");
+
+			const newDetails = { book, user: otherUser, permission: "R" };
+
+			const cookie = await login();
+			const res = request(app).patch(`${baseUrl}/custom-permissions`).send(newDetails).set("Cookie", cookie);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(200);
+
+			const query = "SELECT Permission FROM BOOK_CUSTOM_PERMISSION WHERE UserId=? AND BookId=?";
+			const permission = (await query_db(query, [otherUser, book]))[0]["Permission"];
+			expect(permission).toBe("R");
+		});
+
+		test("Add prohibition", async () => {
+			const user = await insertUser();
+			const otherUser = await insertUser("OtherUser");
+			const book = await insertBook(user, "Book", "A book", "R", "<svg></svg>");
+
+			const newDetails = { book, user: otherUser, permission: "-" };
+
+			const cookie = await login();
+			const res = request(app).patch(`${baseUrl}/custom-permissions`).send(newDetails).set("Cookie", cookie);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(200);
+
+			const query = "SELECT Permission FROM BOOK_CUSTOM_PERMISSION WHERE UserId=? AND BookId=?";
+			const permission = (await query_db(query, [otherUser, book]))[0]["Permission"];
+			expect(permission).toBe("-");
+		});
+
+		test("Change existing custom permission", async () => {
+			const user = await insertUser();
+			const otherUser = await insertUser("OtherUser");
+			const book = await insertBook(user, "Book", "A book", "-", "<svg></svg>");
+			addCustomBookPermission(otherUser, book, "W");
+
+			const newDetails = { book, user: otherUser, permission: "R" };
+
+			const cookie = await login();
+			const res = request(app).patch(`${baseUrl}/custom-permissions`).send(newDetails).set("Cookie", cookie);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(200);
+
+			const query = "SELECT Permission FROM BOOK_CUSTOM_PERMISSION WHERE UserId=? AND BookId=?";
+			const permission = (await query_db(query, [otherUser, book]))[0]["Permission"];
+			expect(permission).toBe("R");
+		});
+
+		test("Revert to default permission", async () => {
+			const user = await insertUser();
+			const otherUser = await insertUser("OtherUser");
+			const book = await insertBook(user, "Book", "A book", "-", "<svg></svg>");
+			addCustomBookPermission(otherUser, book, "W");
+
+			const newDetails = { book, user: otherUser, permission: "Default" };
+
+			const cookie = await login();
+			const res = request(app).patch(`${baseUrl}/custom-permissions`).send(newDetails).set("Cookie", cookie);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(200);
+
+			const query = "SELECT Permission FROM BOOK_CUSTOM_PERMISSION WHERE UserId=? AND BookId=?";
+			const permissions = await query_db(query, [otherUser, book]);
+			expect(permissions.length).toBe(0);
+		});
+
+		test("Invalid book", async () => {
+			const user = await insertUser();
+			const otherUser = await insertUser("OtherUser");
+			const book = await insertBook(user, "Book", "A book", "-", "<svg></svg>");
+
+			const newDetails = { book: book + 1, user: otherUser, permission: "-" };
+
+			const cookie = await login();
+			const res = request(app).patch(`${baseUrl}/custom-permissions`).send(newDetails).set("Cookie", cookie);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(404);
+
+			const query = "SELECT Permission FROM BOOK_CUSTOM_PERMISSION WHERE UserId=? AND BookId=?";
+			const permissions = await query_db(query, [otherUser, book]);
+			expect(permissions.length).toBe(0);
+		});
+
+		test("Book not owned", async () => {
+			await insertUser();
+			const otherUser = await insertUser("OtherUser");
+			const book = await insertBook(otherUser, "Book", "A book", "-", "<svg></svg>");
+
+			const newDetails = { book: book, user: otherUser, permission: "-" };
+
+			const cookie = await login();
+			const res = request(app).patch(`${baseUrl}/custom-permissions`).send(newDetails).set("Cookie", cookie);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(401);
+
+			const query = "SELECT Permission FROM BOOK_CUSTOM_PERMISSION WHERE UserId=? AND BookId=?";
+			const permissions = await query_db(query, [otherUser, book]);
+			expect(permissions.length).toBe(0);
+		});
+
+		test("Invalid user", async () => {
+			const user = await insertUser();
+			const book = await insertBook(user, "Book", "A book", "-", "<svg></svg>");
+
+			const newDetails = { book, user: user + 1, permission: "-" };
+
+			const cookie = await login();
+			const res = request(app).patch(`${baseUrl}/custom-permissions`).send(newDetails).set("Cookie", cookie);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(404);
+		});
+
+		test("Adding custom permission to self", async () => {
+			const user = await insertUser();
+			const book = await insertBook(user, "Book", "A book", "-", "<svg></svg>");
+
+			const newDetails = { book, user, permission: "-" };
+
+			const cookie = await login();
+			const res = request(app).patch(`${baseUrl}/custom-permissions`).send(newDetails).set("Cookie", cookie);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(403);
+
+			const query = "SELECT Permission FROM BOOK_CUSTOM_PERMISSION WHERE UserId=? AND BookId=?";
+			const permissions = await query_db(query, [user, book]);
+			expect(permissions.length).toBe(0);
+		});
+
+		test("Udpates tables", async () => {
+			const user = await insertUser();
+			const otherUser = await insertUser("OtherUser");
+			const book = await insertBook(user, "Book", "A book", "-", "<svg></svg>");
+
+			const newDetails = { book, user: otherUser, permission: "R" };
+
+			const cookie = await login();
+			const otherUserSession = await login("OtherUser");
+			const res = request(app).patch(`${baseUrl}/custom-permissions`).send(newDetails).set("Cookie", cookie);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(200);
+
+			expect(await new UpdatesCustomPermission(otherUserSession, book).hasUpdate()).toBeTruthy();
+		});
+
+		test("User is not logged in", async () => {
+			const user = await insertUser();
+			const book = await insertBook(user, "Book", "A book", "-", "<svg></svg>");
+
+			const newDetails = { book, user, permission: "R" };
+
+			const res = request(app).patch(`${baseUrl}/custom-permissions`).send(newDetails);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(401);
 		});
 	});
 });
