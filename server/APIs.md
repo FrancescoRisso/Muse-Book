@@ -290,7 +290,7 @@ Edit data of an owned book.
     -   user is logged in
 -   Additional Constraints:
     -   return 404 if `id` is not a valid book
-    -   return 401 if the user is not the owner of the book
+    -   return 401 if the user does not have writing rights for the book
 
 ### PATCH `musebook/api/book/custom-permissions`
 
