@@ -275,7 +275,7 @@ Create a new book.
 
 ### PATCH `musebook/api/book`
 
-Edit data of a new book.
+Edit data of an owned book.
 
 -   Request Parameters: None
 -   Request Body Content:
@@ -284,14 +284,13 @@ Edit data of a new book.
     -   `description`: a string
     -   `cover`: an image
     -   `generalPermission`: a string that is either "R", "W" or "-"
--   Response Body Content:
-    -   `int id`: the Id of the new book
+    -   _Except for `id` which is mandatory, all other fields are optional: not inserting them means not to change the value._
+-   Response Body Content: None
 -   Access Constraints:
     -   user is logged in
 -   Additional Constraints:
     -   return 404 if `id` is not a valid book
     -   return 401 if the user is not the owner of the book
-    -   return 404 if any of the `custom_permissions.user` is not a valid user
 
 ### PATCH `musebook/api/book/custom-permissions`
 
