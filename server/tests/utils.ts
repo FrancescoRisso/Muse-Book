@@ -50,14 +50,21 @@ export const insertUser = async (
 	});
 };
 
-export const insertBook = async (owner: number, title = "A book", descr = "A test book", permiss = "R", cover = "") => {
+export const insertBook = async (
+	owner: number,
+	title = "A book",
+	descr = "A test book",
+	permiss = "R",
+	cover = "",
+	newOwner: number | null = null,
+) => {
 	const query = `
-	INSERT INTO BOOK(Owner, Title, Description, GeneralPermission, Cover)
-	VALUES(?, ?, ?, ?, ?);
+	INSERT INTO BOOK(Owner, Title, Description, GeneralPermission, Cover, UnconfirmedNewOwner)
+	VALUES(?, ?, ?, ?, ?, ?);
 	`;
 
 	return new Promise<number>((resolve, reject) => {
-		db.run(query, [owner, title, descr, permiss, cover], async (err: any) => {
+		db.run(query, [owner, title, descr, permiss, cover, newOwner], async (err: any) => {
 			if (err) return reject(err);
 			const id = (await query_db(`SELECT Id FROM BOOK WHERE Title=? AND Owner=?`, [title, owner]))[0]["Id"];
 			return resolve(id);
