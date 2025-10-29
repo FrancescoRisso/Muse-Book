@@ -1586,4 +1586,152 @@ describe(`Book APIs ("${baseUrl}")`, () => {
 			expect((await res).status).toBe(401);
 		});
 	});
+
+	describe.skip('Propose a book transfer ("POST /transfer")', () => {
+		test("Ok", async () => {
+			const user = await insertUser();
+			const otherUser = await insertUser("OtherUser");
+			const book = await insertBook(user);
+			await insertBookInLibrary(otherUser, book);
+
+			const newDetails = { book, user: otherUser };
+
+			const cookie = await login();
+			const res = request(app).post(`${baseUrl}/transfer`).send(newDetails).set("Cookie", cookie);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(200);
+
+			const query = "SELECT UnconfirmedNewOwner FROM BOOK WHERE Id=?";
+			const newOwner = (await query_db(query, [book]))[0]["UnconfirmedNewOwner"];
+			expect(newOwner).toBe(otherUser);
+		});
+
+		test("Target user does not have the book in library", async () => {
+			const user = await insertUser();
+			const otherUser = await insertUser("OtherUser");
+			const book = await insertBook(user);
+
+			const newDetails = { book, user: otherUser };
+
+			const cookie = await login();
+			const res = request(app).post(`${baseUrl}/transfer`).send(newDetails).set("Cookie", cookie);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(406);
+
+			const query = "SELECT UnconfirmedNewOwner FROM BOOK WHERE Id=?";
+			const newOwner = (await query_db(query, [book]))[0]["UnconfirmedNewOwner"];
+			expect(newOwner).toBe(null);
+		});
+
+		test("Target user is the user itself", async () => {
+			const user = await insertUser();
+			const book = await insertBook(user);
+			await insertBookInLibrary(user, book);
+
+			const newDetails = { book, user };
+
+			const cookie = await login();
+			const res = request(app).post(`${baseUrl}/transfer`).send(newDetails).set("Cookie", cookie);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(403);
+
+			const query = "SELECT UnconfirmedNewOwner FROM BOOK WHERE Id=?";
+			const newOwner = (await query_db(query, [book]))[0]["UnconfirmedNewOwner"];
+			expect(newOwner).toBe(null);
+		});
+
+		test("Target user does exist", async () => {
+			const user = await insertUser();
+			const book = await insertBook(user);
+			await insertBookInLibrary(user, book);
+
+			const newDetails = { book, user: user + 1 };
+
+			const cookie = await login();
+			const res = request(app).post(`${baseUrl}/transfer`).send(newDetails).set("Cookie", cookie);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(404);
+
+			const query = "SELECT UnconfirmedNewOwner FROM BOOK WHERE Id=?";
+			const newOwner = (await query_db(query, [book]))[0]["UnconfirmedNewOwner"];
+			expect(newOwner).toBe(null);
+		});
+
+		test("User does not own the book", async () => {
+			const user = await insertUser();
+			const otherUser = await insertUser("OtherUser");
+			const book = await insertBook(otherUser);
+			await insertBookInLibrary(otherUser, book);
+			await insertBookInLibrary(user, book);
+
+			const newDetails = { book, user: otherUser };
+
+			const cookie = await login();
+			const res = request(app).post(`${baseUrl}/transfer`).send(newDetails).set("Cookie", cookie);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(401);
+
+			const query = "SELECT UnconfirmedNewOwner FROM BOOK WHERE Id=?";
+			const newOwner = (await query_db(query, [book]))[0]["UnconfirmedNewOwner"];
+			expect(newOwner).toBe(null);
+		});
+
+		test("Invalid book", async () => {
+			const user = await insertUser();
+			const otherUser = await insertUser("OtherUser");
+			const book = await insertBook(user);
+			await insertBookInLibrary(otherUser, book);
+
+			const newDetails = { book: book + 1, user: otherUser };
+
+			const cookie = await login();
+			const res = request(app).post(`${baseUrl}/transfer`).send(newDetails).set("Cookie", cookie);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(404);
+
+			const query = "SELECT UnconfirmedNewOwner FROM BOOK WHERE Id=?";
+			const newOwner = (await query_db(query, [book]))[0]["UnconfirmedNewOwner"];
+			expect(newOwner).toBe(null);
+		});
+
+		test("Update tables", async () => {
+			const user = await insertUser();
+			const otherUser = await insertUser("OtherUser");
+			const book = await insertBook(user);
+			await insertBookInLibrary(otherUser, book);
+
+			const newDetails = { book, user: otherUser };
+
+			const cookie = await login();
+			const otherSession = await login();
+			const otherUserSession = await login("OtherUser");
+			const res = request(app).post(`${baseUrl}/transfer`).send(newDetails).set("Cookie", cookie);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(200);
+
+			expect(await new UpdatesBookInfo(otherSession, book).hasUpdate()).toBeTruthy();
+			expect(await new UpdatesBookInfo(otherUserSession, book).hasUpdate()).toBeTruthy();
+		});
+
+		test("User is not logged in", async () => {
+			const user = await insertUser();
+			const otherUser = await insertUser("OtherUser");
+			const book = await insertBook(user);
+			await insertBookInLibrary(otherUser, book);
+
+			const newDetails = { book, user: otherUser };
+
+			const res = request(app).post(`${baseUrl}/transfer`).send(newDetails);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(422);
+		});
+	});
 });

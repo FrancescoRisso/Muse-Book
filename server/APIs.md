@@ -324,7 +324,7 @@ Add a custom permission to a book.
     -   return 401 if the user is not the owner of the book
     -   return 404 if `user` is not a valid user
 
-### PUSH `musebook/api/book/transfer`
+### POST `musebook/api/book/transfer`
 
 Create a book transfer proposal.
 
@@ -340,6 +340,7 @@ Create a book transfer proposal.
     -   return 401 if the user is not the owner of the book
     -   return 404 if `user` is not a valid user
     -   return 403 if `user` is the same user making the request
+	-	return 406 if `user` does not have the `book` in their library
 
 ### DELETE `musebook/api/book/transfer/:id`
 
