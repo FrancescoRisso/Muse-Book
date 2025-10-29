@@ -1843,4 +1843,113 @@ describe(`Book APIs ("${baseUrl}")`, () => {
 			expect((await res).status).toBe(401);
 		});
 	});
+
+	describe.skip('Accept book transfer ("PATCH /transfer/:id")', () => {
+		test("Ok", async () => {
+			const user = await insertUser();
+			const otherUser = await insertUser("OtherUser");
+			const book = await insertBook(otherUser, "Book", "A book", "R", "", otherUser);
+			await insertBookInLibrary(user, book);
+
+			const cookie = await login();
+			const res = request(app).patch(`${baseUrl}/transfer/${book}`).set("Cookie", cookie);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(200);
+
+			const query = "SELECT Onwer as owner, UnconfirmedNewOwner as newOwner FROM BOOK WHERE Id=?";
+			const { newOwner, owner } = (await query_db(query, [book]))[0];
+			expect(newOwner).toBe(null);
+			expect(owner).toBe(user);
+		});
+
+		test("Id is not a number", async () => {
+			const user = await insertUser();
+			const otherUser = await insertUser("OtherUser");
+			const book = await insertBook(otherUser, "Book", "A book", "R", "", otherUser);
+			await insertBookInLibrary(user, book);
+
+			const cookie = await login();
+			const res = request(app).patch(`${baseUrl}/transfer/book`).set("Cookie", cookie);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(422);
+
+			const query = "SELECT Onwer as owner, UnconfirmedNewOwner as newOwner FROM BOOK WHERE Id=?";
+			const { newOwner, owner } = (await query_db(query, [book]))[0];
+			expect(newOwner).toBe(user);
+			expect(owner).toBe(otherUser);
+		});
+
+		test("Invalid book id", async () => {
+			const user = await insertUser();
+			const otherUser = await insertUser("OtherUser");
+			const book = await insertBook(otherUser, "Book", "A book", "R", "", otherUser);
+			await insertBookInLibrary(user, book);
+
+			const cookie = await login();
+			const res = request(app)
+				.patch(`${baseUrl}/transfer/${book + 1}`)
+				.set("Cookie", cookie);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(404);
+
+			const query = "SELECT Onwer as owner, UnconfirmedNewOwner as newOwner FROM BOOK WHERE Id=?";
+			const { newOwner, owner } = (await query_db(query, [book]))[0];
+			expect(newOwner).toBe(user);
+			expect(owner).toBe(otherUser);
+		});
+
+		test("User is not the proposed new owner", async () => {
+			const user = await insertUser();
+			const otherUser = await insertUser("OtherUser");
+			const proposedOwner = await insertUser("ProposedOwner");
+			const book = await insertBook(otherUser, "Book", "A book", "R", "", proposedOwner);
+			await insertBookInLibrary(user, book);
+
+			const cookie = await login();
+			const res = request(app).patch(`${baseUrl}/transfer/${book}`).set("Cookie", cookie);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(401);
+
+			const query = "SELECT Onwer as owner, UnconfirmedNewOwner as newOwner FROM BOOK WHERE Id=?";
+			const { newOwner, owner } = (await query_db(query, [book]))[0];
+			expect(newOwner).toBe(proposedOwner);
+			expect(owner).toBe(otherUser);
+		});
+
+		test("Update tables", async () => {
+			const user = await insertUser();
+			const otherUser = await insertUser("OtherUser");
+			const book = await insertBook(otherUser, "Book", "A book", "R", "", otherUser);
+			await insertBookInLibrary(user, book);
+			await insertBookInLibrary(otherUser, book);
+
+			const cookie = await login();
+			const otherSession = await login();
+			const otherUserSession = await login();
+			const res = request(app).patch(`${baseUrl}/transfer/${book}`).set("Cookie", cookie);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(200);
+
+			expect(await new UpdatesBookInfo(otherSession, book).hasUpdate()).toBeTruthy();
+			expect(await new UpdatesBookInfo(otherUserSession, book).hasUpdate()).toBeTruthy();
+		});
+
+		test("User not logged in", async () => {
+			const user = await insertUser();
+			const otherUser = await insertUser("OtherUser");
+			const book = await insertBook(otherUser, "Book", "A book", "R", "", otherUser);
+			await insertBookInLibrary(user, book);
+			await insertBookInLibrary(otherUser, book);
+
+			const res = request(app).patch(`${baseUrl}/transfer/${book}`);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(401);
+		});
+	});
 });
