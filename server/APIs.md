@@ -93,14 +93,14 @@ Register a new user.
 Get the list of users whose username contains a specific string (ignoring casing).
 
 -   Request Parameters:
-	- `partname`: a string that cannot be empty
+    -   `partname`: a string that cannot be empty
 -   Request Body Content: None
--   Response Body Content: 
-	- `u[] users`: the list of users with username matching `partname`, where `u` is an object with:
-		- `int id`: the ID of the user
-		- `str username`: the full username of the user
+-   Response Body Content:
+    -   `u[] users`: the list of users with username matching `partname`, where `u` is an object with:
+        -   `int id`: the ID of the user
+        -   `str username`: the full username of the user
 -   Access Constraints:
-	- user is logged in
+    -   user is logged in
 -   Additional Constraints: None
 
 ### DELETE `musebook/api/user`
@@ -237,6 +237,7 @@ Get all data about a specific book.
     -   `str description`: the description of the book
     -   `img cover`: the cover in front of the book
     -   `int[] songs`: the IDs of the songs inside the book
+    -   `int proposedOwner`: (optional) the proposed new owner of the book, if it exists
 -   Access Constraints:
     -   user is logged in
 -   Additional Constraints:
@@ -340,7 +341,7 @@ Create a book transfer proposal.
     -   return 401 if the user is not the owner of the book
     -   return 404 if `user` is not a valid user
     -   return 403 if `user` is the same user making the request
-	-	return 406 if `user` does not have the `book` in their library
+    -   return 406 if `user` does not have the `book` in their library
 
 ### DELETE `musebook/api/book/transfer/:id`
 

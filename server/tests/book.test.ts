@@ -579,6 +579,32 @@ describe(`Book APIs ("${baseUrl}")`, () => {
 			await expect(res).resolves.toBeDefined();
 			expect((await res).status).toBe(401);
 		});
+
+		test("Book in transfer", async () => {
+			const user = await insertUser();
+			const otherUser = await insertUser();
+			const book = await insertBook(user, "Book", "Book description", "-", "<svg></svg>", otherUser);
+			const song1 = await insertSong(book, "Song1");
+			const song2 = await insertSong(book, "Song2");
+
+			const cookie = await login();
+			const res = request(app).get(`${baseUrl}/${book}`).set("Cookie", cookie);
+
+			const res_expected = {
+				owner: user,
+				ownerName: "User123",
+				canEdit: true,
+				title: "Book",
+				description: "Book description",
+				cover: "<svg></svg>",
+				songs: [song1, song2],
+				proposedOwner: otherUser,
+			};
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(200);
+			expect((await res).body).toEqual(res_expected);
+		});
 	});
 
 	describe.skip('Toggle favorite flag from book ("POST /favorite")', () => {
