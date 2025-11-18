@@ -9,8 +9,10 @@ import {
 	insertSongVariant,
 	insertUser,
 	login,
+	query_db,
 } from "./utils";
 import { app } from "../index";
+import { UpdatesSong } from "./update_tables_utils";
 
 beforeEach(clearDB);
 
@@ -122,6 +124,166 @@ describe(`Song APIs ("${baseUrl}")`, () => {
 			expect((await res).body).toHaveProperty("variants");
 			expect((await res).body.variants).toContain(v1);
 			expect((await res).body.variants).toContain(v2);
+		});
+	});
+
+	describe.skip('Change title of a song ("PATCH /")', () => {
+		test("Own book", async () => {
+			const user = await insertUser();
+
+			const book = await insertBook(user);
+			await insertBookInLibrary(user, book);
+			const song = await insertSong(book, "Song");
+
+			const cookie = await login();
+			const data = { id: song, title: "New song title" };
+			const res = request(app).patch(`${baseUrl}`).send(data).set("Cookie", cookie);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(200);
+
+			const query = "SELECT Title FROM SONG WHERE Id=?";
+			const newTitle = (await query_db(query, [song]))[0]["Title"];
+			expect(newTitle).toBe("New song title");
+		});
+
+		test("Non-own, editable book", async () => {
+			const user = await insertUser();
+			const otherUser = await insertUser("OtherUser");
+
+			const book = await insertBook(otherUser, "Book", "", "W");
+			await insertBookInLibrary(user, book);
+			const song = await insertSong(book, "Song");
+
+			const cookie = await login();
+			const data = { id: song, title: "New song title" };
+			const res = request(app).patch(`${baseUrl}`).send(data).set("Cookie", cookie);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(200);
+
+			const query = "SELECT Title FROM SONG WHERE Id=?";
+			const newTitle = (await query_db(query, [song]))[0]["Title"];
+			expect(newTitle).toBe("New song title");
+		});
+
+		test("Emtpy title", async () => {
+			const user = await insertUser();
+			const otherUser = await insertUser("OtherUser");
+
+			const book = await insertBook(otherUser, "Book", "", "W");
+			await insertBookInLibrary(user, book);
+			const song = await insertSong(book, "Song");
+
+			const cookie = await login();
+			const data = { id: song, title: "" };
+			const res = request(app).patch(`${baseUrl}`).send(data).set("Cookie", cookie);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(422);
+
+			const query = "SELECT Title FROM SONG WHERE Id=?";
+			const newTitle = (await query_db(query, [song]))[0]["Title"];
+			expect(newTitle).toBe("Song");
+		});
+
+		test("Non-number id", async () => {
+			const user = await insertUser();
+			const otherUser = await insertUser("OtherUser");
+
+			const book = await insertBook(otherUser, "Book", "", "W");
+			await insertBookInLibrary(user, book);
+			const song = await insertSong(book, "Song");
+
+			const cookie = await login();
+			const data = { id: "song", title: "New song title" };
+			const res = request(app).patch(`${baseUrl}`).send(data).set("Cookie", cookie);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(422);
+
+			const query = "SELECT Title FROM SONG WHERE Id=?";
+			const newTitle = (await query_db(query, [song]))[0]["Title"];
+			expect(newTitle).toBe("Song");
+		});
+
+		test("Song does not exist", async () => {
+			const user = await insertUser();
+			const otherUser = await insertUser("OtherUser");
+
+			const book = await insertBook(otherUser, "Book", "", "W");
+			await insertBookInLibrary(user, book);
+			const song = await insertSong(book, "Song");
+
+			const cookie = await login();
+			const data = { id: song + 1, title: "New song title" };
+			const res = request(app).patch(`${baseUrl}`).send(data).set("Cookie", cookie);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(403);
+
+			const query = "SELECT Title FROM SONG WHERE Id=?";
+			const newTitle = (await query_db(query, [song]))[0]["Title"];
+			expect(newTitle).toBe("Song");
+		});
+
+		test("Non-own, non-editable book", async () => {
+			await insertUser();
+			const otherUser = await insertUser("OtherUser");
+
+			const book = await insertBook(otherUser, "Book", "", "-");
+			const song = await insertSong(book, "Song");
+
+			const cookie = await login();
+			const data = { id: song, title: "New song title" };
+			const res = request(app).patch(`${baseUrl}`).send(data).set("Cookie", cookie);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(403);
+
+			const query = "SELECT Title FROM SONG WHERE Id=?";
+			const newTitle = (await query_db(query, [song]))[0]["Title"];
+			expect(newTitle).toBe("Song");
+		});
+
+		test("Udpates tables", async () => {
+			const user = await insertUser();
+			const otherUser = await insertUser("OtherUser");
+
+			const book = await insertBook(user);
+			await insertBookInLibrary(user, book);
+			await insertBookInLibrary(otherUser, book);
+			const song = await insertSong(book, "Song");
+
+			const data = { id: song, title: "New song title" };
+
+			const cookie = await login();
+			const otherSession = await login();
+			const otherUserSession = await login("OtherUser");
+			const res = request(app).patch(`${baseUrl}/`).send(data).set("Cookie", cookie);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(200);
+
+			expect(await new UpdatesSong(otherUserSession, song).hasUpdate()).toBeTruthy();
+			expect(await new UpdatesSong(otherSession, song).hasUpdate()).toBeTruthy();
+		});
+
+		test("User is not logged in", async () => {
+			const user = await insertUser();
+
+			const book = await insertBook(user);
+			const song = await insertSong(book, "Song");
+
+			const data = { id: song, title: "New song title" };
+			const res = request(app).patch(`${baseUrl}`).send(data);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(401);
+
+			const query = "SELECT Title FROM SONG WHERE Id=?";
+			const newTitle = (await query_db(query, [song]))[0]["Title"];
+			expect(newTitle).toBe("Song");
 		});
 	});
 });

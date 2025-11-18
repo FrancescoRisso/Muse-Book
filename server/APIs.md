@@ -402,7 +402,7 @@ Change title of a song.
     -   user is logged in
 -   Additional Constraints:
     -   return 404 if `id` is not an existing song
-    -   return 403 if the user cannot read the book where the song is contained
+    -   return 403 if the user cannot edit the book where the song is contained
 
 ### DELETE `musebook/api/song`
 
