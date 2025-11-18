@@ -12,7 +12,7 @@ import {
 	query_db,
 } from "./utils";
 import { app } from "../index";
-import { UpdatesSong } from "./update_tables_utils";
+import { UpdatesBookInfo, UpdatesSong } from "./update_tables_utils";
 
 beforeEach(clearDB);
 
@@ -284,6 +284,138 @@ describe(`Song APIs ("${baseUrl}")`, () => {
 			const query = "SELECT Title FROM SONG WHERE Id=?";
 			const newTitle = (await query_db(query, [song]))[0]["Title"];
 			expect(newTitle).toBe("Song");
+		});
+	});
+
+	describe('Delete a song ("DELETE /")', () => {
+		test("Own book", async () => {
+			const user = await insertUser();
+
+			const book = await insertBook(user);
+			await insertBookInLibrary(user, book);
+			const song = await insertSong(book, "Song");
+
+			const cookie = await login();
+			const res = request(app).delete(`${baseUrl}`).send({ id: song }).set("Cookie", cookie);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(200);
+
+			const query = "SELECT COUNT(*) FROM SONG";
+			const num = (await query_db(query, []))[0]["COUNT(*)"];
+			expect(num).toBe(0);
+		});
+
+		test("Non-own book, with writing permission", async () => {
+			const user = await insertUser();
+			const otherUser = await insertUser("OtherUser");
+
+			const book = await insertBook(otherUser, "", "", "W");
+			await insertBookInLibrary(user, book);
+			const song = await insertSong(book, "Song");
+
+			const cookie = await login();
+			const res = request(app).delete(`${baseUrl}`).send({ id: song }).set("Cookie", cookie);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(200);
+
+			const query = "SELECT COUNT(*) FROM SONG";
+			const num = (await query_db(query, []))[0]["COUNT(*)"];
+			expect(num).toBe(0);
+		});
+
+		test("Non-own book, without writing permission", async () => {
+			const user = await insertUser();
+			const otherUser = await insertUser("OtherUser");
+
+			const book = await insertBook(otherUser, "", "", "R");
+			await insertBookInLibrary(user, book);
+			const song = await insertSong(book, "Song");
+
+			const cookie = await login();
+			const res = request(app).delete(`${baseUrl}`).send({ id: song }).set("Cookie", cookie);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(403);
+
+			const query = "SELECT COUNT(*) FROM SONG";
+			const num = (await query_db(query, []))[0]["COUNT(*)"];
+			expect(num).toBe(1);
+		});
+
+		test("Id NaN", async () => {
+			const user = await insertUser();
+
+			const book = await insertBook(user);
+			await insertBookInLibrary(user, book);
+			await insertSong(book, "Song");
+
+			const cookie = await login();
+			const res = request(app).delete(`${baseUrl}`).send({ id: "song" }).set("Cookie", cookie);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(422);
+
+			const query = "SELECT COUNT(*) FROM SONG";
+			const num = (await query_db(query, []))[0]["COUNT(*)"];
+			expect(num).toBe(1);
+		});
+
+		test("Id does not exist", async () => {
+			const user = await insertUser();
+
+			const book = await insertBook(user);
+			await insertBookInLibrary(user, book);
+			const song = (await insertSong(book, "Song")) + 1;
+
+			const cookie = await login();
+			const res = request(app).delete(`${baseUrl}`).send({ id: song }).set("Cookie", cookie);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(404);
+
+			const query = "SELECT COUNT(*) FROM SONG";
+			const num = (await query_db(query, []))[0]["COUNT(*)"];
+			expect(num).toBe(1);
+		});
+
+		test("User not logged in", async () => {
+			const user = await insertUser();
+
+			const book = await insertBook(user);
+			await insertBookInLibrary(user, book);
+			const song = await insertSong(book, "Song");
+
+			const res = request(app).delete(`${baseUrl}`).send({ id: song });
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(401);
+
+			const query = "SELECT COUNT(*) FROM SONG";
+			const num = (await query_db(query, []))[0]["COUNT(*)"];
+			expect(num).toBe(1);
+		});
+
+		test("Update tables", async () => {
+			const user = await insertUser();
+			const otherUser = await insertUser("OtherUser");
+
+			const book = await insertBook(user);
+			await insertBookInLibrary(user, book);
+			await insertBookInLibrary(otherUser, book);
+			const song = await insertSong(book, "Song");
+
+			const cookie = await login();
+			const otherSession = await login();
+			const otherUserSession = await login("OtherUser");
+			const res = request(app).delete(`${baseUrl}`).send({ id: song }).set("Cookie", cookie);
+
+			await expect(res).resolves.toBeDefined();
+			expect((await res).status).toBe(200);
+
+			expect(await new UpdatesBookInfo(otherSession, book).hasUpdate()).toBeTruthy();
+			expect(await new UpdatesBookInfo(otherUserSession, book).hasUpdate()).toBeTruthy();
 		});
 	});
 });
