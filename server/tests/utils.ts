@@ -120,6 +120,21 @@ export const addCustomBookPermission = async (user: number, book: number, perm: 
 	});
 };
 
+export const insertSongVariant = async (song: number, name = "Default", notes = ""): Promise<void> => {
+	const query = `
+	INSERT INTO SONG_VARIANT(SongId, Name, Notes)
+	VALUES(?, ?, ?);
+	`;
+
+	return new Promise<void>((resolve, reject) => {
+		db.run(query, [song, name, notes], async (err: any) => {
+			if (err) return reject(err);
+			const id = (await query_db(`SELECT Id FROM SONG_VARIANT WHERE SongId=? AND Name=?`, [song, name]))[0]["Id"];
+			return resolve(id);
+		});
+	});
+};
+
 export const login = async (username = "User123", password = "pwd"): Promise<string> => {
 	return new Promise<string>((resolve, reject) => {
 		request(app)
