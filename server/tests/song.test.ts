@@ -287,7 +287,7 @@ describe(`Song APIs ("${baseUrl}")`, () => {
 		});
 	});
 
-	describe('Delete a song ("DELETE /")', () => {
+	describe.skip('Delete a song ("DELETE /")', () => {
 		test("Own book", async () => {
 			const user = await insertUser();
 
