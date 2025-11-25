@@ -7,10 +7,7 @@ ON_DELETE: dict[str, list[tuple[str, str, str, str]]] = {
     ],
     "SONG": [("BookId", "BOOK", "Id", "CASCADE")],
     "SONG_VARIANT": [("SongId", "SONG", "Id", "CASCADE")],
-    "SONG_IMAGES": [
-        ("VariantId", "SONG_VARIANT", "Id", "CASCADE"),
-        ("ImageId", "SONG_IMAGE_DATA", "Id", "RESTRICT"),
-    ],
+    "SONG_IMAGES": [("VariantId", "SONG_VARIANT", "Id", "CASCADE")],
     "VARIANT_LAST_OPENED_DATE": [
         ("VariantId", "SONG_VARIANT", "Id", "CASCADE"),
         ("UserId", "USER", "Id", "CASCADE"),
@@ -63,10 +60,6 @@ ON_DELETE: dict[str, list[tuple[str, str, str, str]]] = {
         ("DeviceId", "LOGGED_IN_DEVICES", "Id", "CASCADE"),
         ("VariantId", "SONG_VARIANT", "Id", "SET NULL"),
     ],
-    "UPDATES_SONG_IMAGE_DATA": [
-        ("DeviceId", "LOGGED_IN_DEVICES", "Id", "CASCADE"),
-        ("ImageId", "SONG_IMAGE_DATA", "Id", "SET NULL"),
-    ],
 }
 
 
@@ -77,9 +70,7 @@ if __name__ == "__main__":
     foreign_keys_matcher = re.compile(
         r"ALTER TABLE `([^`]*)` ADD FOREIGN KEY \(`([^`]*)`\) REFERENCES `([^`]*)`\(`([^`]*)`\)"
     )
-    autoincrement_matcher = re.compile(
-        r",\s*\n\s*PRIMARY KEY \([^)]*\)", re.MULTILINE
-    )
+    autoincrement_matcher = re.compile(r",\s*\n\s*PRIMARY KEY \([^)]*\)", re.MULTILINE)
 
     with open(FILE, "r") as f:
         text = "".join(f.readlines())

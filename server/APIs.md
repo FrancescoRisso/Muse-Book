@@ -426,15 +426,14 @@ Create a new song, with a variant called "default" and no annotations.
 -   Request Body Content:
     -   `title` a string that must not be empty
     -   `book`: a number
-    -   `images`: a list of at least one number
+    -   `images`: a list of at least one string
 -   Response Body Content:
     -   `int id`: the Id of the new song
 -   Access Constraints:
     -   user is logged in
 -   Additional Constraints:
-    -   return 409 if `id` is an existing song
+    -   return 409 if `title` is already the title of an existing song in the same book
     -   return 404 if `book` is not an existing book Id
-    -   return 401 if any of the `id`s is not an existing image Ids
     -   return 403 if the user cannot write the book where the song is contained
 
 ### POST `musebook/api/song/duplicate`

@@ -80,8 +80,3 @@ export class UpdatesSongVariant extends UpdatesTableTwoParams {
 	tableName = "UPDATES_SONG_VARIANT";
 	otherParamName = "VariantId";
 }
-
-export class UpdatesSongImageData extends UpdatesTableTwoParams {
-	tableName = "UPDATES_SONG_IMAGE_DATA";
-	otherParamName = "ImageId";
-}
